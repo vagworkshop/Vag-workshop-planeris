@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prisijungimas – Auto Servisas Kalendorius</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #222535;
+  --surface3: #2a2d3e;
+  --border: #2e3148;
+  --border2: #3a3f5c;
+  --text: #e8eaf6;
+  --text2: #9fa8c9;
+  --accent: #f97316;
+  --accent2: #fb923c;
+  --radius: 6px;
+  --font: 'Georgia', 'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 28px 26px;
+  width: min(360px, 100%);
+}
+.logo {
+  font-family: var(--font);
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.logo span { color: var(--text2); font-size: 14px; font-family: var(--font-ui); font-weight: normal; display: block; margin-top: 2px; }
+h1 { font-size: 15px; font-weight: 600; color: var(--text2); margin: 18px 0 16px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.form-group label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: .04em; }
+.form-group select, .form-group input {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  font-size: 14px;
+  font-family: var(--font-ui);
+}
+.form-group select option { background: var(--surface2); }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+.btn-primary {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:disabled { opacity: .6; cursor: default; }
+.error-msg {
+  color: #f87171;
+  font-size: 13px;
+  margin-top: 12px;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">AutoServisas <span>Kalendorius</span></div>
+  <h1>Prisijunkite prie kalendoriaus</h1>
+
+  <form id="login-form">
+    <div class="form-group">
+      <label for="f-username">Darbuotojas</label>
+      <select id="f-username" required>
+        <option value="alanas">Alanas</option>
+        <option value="sigitas">Sigitas</option>
+        <option value="darius">Darius</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="f-password">Slaptažodis</label>
+      <input type="password" id="f-password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn-primary" id="btn-login">Prisijungti</button>
+    <div class="error-msg" id="err"></div>
+  </form>
+</div>
+
+<script>
+const form = document.getElementById('login-form');
+const errEl = document.getElementById('err');
+const btn = document.getElementById('btn-login');
+
+// Jei jau prisijungę - iškart nukreipia į kalendorių.
+fetch('/api/me', { credentials: 'same-origin' }).then(r => {
+  if (r.ok) window.location.href = '/';
+});
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Jungiamasi…';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('f-username').value,
+        password: document.getElementById('f-password').value,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Nepavyko prisijungti.');
+    }
+    window.location.href = '/';
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Prisijungti';
+  }
+});
+</script>
+</body>
+</html>

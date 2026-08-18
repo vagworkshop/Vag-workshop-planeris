@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Servisas – Kalendorius</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #222535;
+  --surface3: #2a2d3e;
+  --border: #2e3148;
+  --border2: #3a3f5c;
+  --text: #e8eaf6;
+  --text2: #9fa8c9;
+  --text3: #5c6490;
+  --accent: #f97316;
+  --accent2: #fb923c;
+  --slot-h: 48px;
+  --time-col: 52px;
+  --radius: 6px;
+  --font: 'Georgia', 'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, sans-serif;
+
+  /* Employee colors */
+  --c-alanas: #2563eb;
+  --c-alanas-bg: rgba(37,99,235,.18);
+  --c-sigitas: #16a34a;
+  --c-sigitas-bg: rgba(22,163,74,.18);
+  --c-darius: #9333ea;
+  --c-darius-bg: rgba(147,51,234,.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 2px solid var(--accent);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 52px;
+}
+.logo {
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.logo span { color: var(--text2); font-size: 13px; font-family: var(--font-ui); font-weight: normal; margin-left: 6px; }
+header .spacer { flex: 1; }
+
+.btn {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--border2); }
+.btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-icon {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.btn-icon:hover { background: var(--border2); }
+
+.nav-group { display: flex; gap: 4px; align-items: center; }
+.view-group { display: flex; gap: 2px; }
+
+.date-display {
+  font-size: 13px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+/* Legend */
+.legend {
+  display: flex; gap: 10px; align-items: center;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text2);
+}
+.legend-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+
+/* ── MAIN LAYOUT ── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px;
+  gap: 6px;
+}
+
+/* ── CALENDAR CONTAINER ── */
+#cal-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Header row (sticky) */
+#cal-header {
+  display: flex;
+  border-bottom: 2px solid var(--border2);
+  flex-shrink: 0;
+  background: var(--surface2);
+  border-radius: 8px 8px 0 0;
+}
+
+.time-gutter {
+  width: var(--time-col);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+
+#col-headers {
+  flex: 1;
+  display: grid;
+  /* columns set by JS */
+  min-width: 0;
+}
+
+/* Body = time gutter + scrollable grid */
+#cal-body {
+  flex: 1;
+  display: flex;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+#cal-body::-webkit-scrollbar { width: 6px; }
+#cal-body::-webkit-scrollbar-track { background: var(--surface2); }
+#cal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Time labels column */
+#time-labels {
+  width: var(--time-col);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.time-label {
+  height: var(--slot-h);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 6px 0 0;
+  font-size: 11px;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+}
+.time-label:first-child { border-top: none; }
+
+/* Grid area */
+#cal-grid {
+  flex: 1;
+  position: relative;
+  display: grid;
+  /* columns set by JS */
+  min-width: 0;
+}
+
+/* Each column cell */
+.grid-col {
+  position: relative;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.grid-col:last-child { border-right: none; }
+
+/* Slot rows inside column */
+.slot {
+  height: var(--slot-h);
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .1s;
+  position: relative;
+}
+.slot:first-child { border-top: none; }
+.slot:hover { background: rgba(249,115,22,.07); }
+.slot.dragging-over { background: rgba(249,115,22,.18); }
+
+/* Day separator */
+.day-sep {
+  border-left: 2px solid var(--border2);
+}
+
+/* ── COLUMN HEADERS ── */
+.day-group-header {
+  background: var(--surface3);
+  border-right: 2px solid var(--border2);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 4px 2px;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+}
+.day-group-header .day-name {
+  font-size: clamp(9px, 1.5vw, 13px);
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-group-header .day-date {
+  font-size: clamp(8px, 1.2vw, 11px);
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-group-header.today-header {
+  border-bottom: 2px solid var(--accent);
+}
+.day-group-header.today-header .day-name { color: var(--accent); }
+
+.emp-header {
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  padding: 3px 2px;
+  text-align: center;
+  font-size: clamp(8px, 1.2vw, 12px);
+  font-weight: 600;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  min-width: 0;
+}
+.emp-header.emp-alanas { color: #60a5fa; border-bottom: 2px solid var(--c-alanas); }
+.emp-header.emp-sigitas { color: #4ade80; border-bottom: 2px solid var(--c-sigitas); }
+.emp-header.emp-darius  { color: #c084fc; border-bottom: 2px solid var(--c-darius); }
+
+/* ── EVENT CARDS ── */
+.event-card {
+  position: absolute;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: grab;
+  overflow: hidden;
+  border-left: 3px solid transparent;
+  transition: opacity .15s, box-shadow .15s;
+  min-width: 0;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  user-select: none;
+}
+.event-card:hover {
+  opacity: .88;
+  box-shadow: 0 4px 12px rgba(0,0,0,.6);
+  z-index: 10;
+}
+.event-card:active { cursor: grabbing; }
+.event-card.dragging-source { opacity: .3; box-shadow: none; }
+.event-card.emp-alanas { background: var(--c-alanas-bg); border-left-color: var(--c-alanas); }
+.event-card.emp-sigitas { background: var(--c-sigitas-bg); border-left-color: var(--c-sigitas); }
+.event-card.emp-darius  { background: var(--c-darius-bg); border-left-color: var(--c-darius); }
+
+/* Resize handles on event cards */
+.resize-handle {
+  position: absolute;
+  left: 0; right: 0;
+  height: 7px;
+  cursor: ns-resize;
+  z-index: 6;
+}
+.resize-handle.resize-top { top: 0; }
+.resize-handle.resize-bottom { bottom: 0; }
+.resize-handle:hover { background: rgba(255,255,255,.18); }
+
+.event-title {
+  font-size: clamp(9px, 1.1vw, 12px);
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-time {
+  font-size: clamp(8px, 1vw, 11px);
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-car {
+  font-size: clamp(8px, 1vw, 11px);
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Drag preview */
+.drag-preview {
+  position: absolute;
+  background: rgba(249,115,22,.25);
+  border: 2px dashed var(--accent);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 20;
+}
+.drag-preview .ghost-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0,0,0,.55);
+  padding: 2px 5px;
+  border-radius: 3px;
+  display: inline-block;
+  margin: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 6px);
+}
+
+/* Now line */
+.now-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 15;
+  pointer-events: none;
+}
+.now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+/* ── MODAL ── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.overlay.hidden { display: none; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 24px;
+  width: min(480px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-family: var(--font);
+  color: var(--accent);
+  font-size: 18px;
+  margin-bottom: 18px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.form-row.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: .04em; }
+.form-group input, .form-group select, .form-group textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.form-group select option { background: var(--surface2); }
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-danger {
+  background: rgba(220,38,38,.2);
+  border: 1px solid #dc2626;
+  color: #fca5a5;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .15s;
+}
+.btn-danger:hover { background: rgba(220,38,38,.4); }
+.btn-cancel {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-cancel:hover { background: var(--border2); }
+
+.error-msg {
+  color: #f87171;
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
+}
+
+/* ── USER BADGE ── */
+.user-badge {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.user-badge b { color: var(--text); }
+
+/* ── DAY VIEW specific ── */
+#col-headers.view-day .day-group-header .day-name { font-size: 15px; }
+#col-headers.view-day .emp-header { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AutoServisas <span>Kalendorius</span></div>
+
+  <div class="nav-group">
+    <button class="btn-icon" id="btn-prev" title="Atgal">&#8592;</button>
+    <div class="date-display" id="date-display"></div>
+    <button class="btn-icon" id="btn-next" title="Pirmyn">&#8594;</button>
+    <button class="btn" id="btn-today" style="font-size:12px">Šiandien</button>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c-alanas)"></div>Alanas</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c-sigitas)"></div>Sigitas</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c-darius)"></div>Darius</div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="view-group">
+    <button class="btn active" data-view="day">Diena</button>
+    <button class="btn" data-view="3days">3 dienos</button>
+    <button class="btn" data-view="week">Savaitė</button>
+  </div>
+
+  <button class="btn btn-primary" id="btn-new" style="margin-left:8px">+ Naujas</button>
+
+  <div class="user-badge" id="user-badge" style="margin-left:12px"></div>
+  <button class="btn" id="btn-logout" style="font-size:12px">Atsijungti</button>
+</header>
+
+<main>
+  <div id="cal-wrap">
+    <div id="cal-header">
+      <div class="time-gutter"></div>
+      <div id="col-headers"></div>
+    </div>
+    <div id="cal-body">
+      <div id="time-labels"></div>
+      <div id="cal-grid"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal" id="modal">
+    <h2 id="modal-title">Naujas darbas</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Darbuotojas</label>
+        <select id="f-emp">
+          <option value="alanas">Alanas</option>
+          <option value="sigitas">Sigitas</option>
+          <option value="darius">Darius</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Klientas</label>
+        <input type="text" id="f-client" placeholder="Vardas Pavardė">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Automobilis (markė, modelis, valst. nr.)</label>
+        <input type="text" id="f-car" placeholder="VW Golf, ABC123">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data nuo</label>
+        <input type="date" id="f-date-from">
+      </div>
+      <div class="form-group">
+        <label>Data iki (kelioms dienoms)</label>
+        <input type="date" id="f-date-to">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Pradžia</label>
+        <input type="time" id="f-start" min="07:00" max="18:00" step="1800">
+      </div>
+      <div class="form-group">
+        <label>Pabaiga</label>
+        <input type="time" id="f-end" min="07:00" max="18:00" step="1800">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Darbų aprašas</label>
+        <textarea id="f-desc" placeholder="Tepalų keitimas, stabdžių patikra..."></textarea>
+      </div>
+    </div>
+    <div class="error-msg" id="f-error"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="btn-delete" style="display:none; margin-right:auto">Trinti</button>
+      <button class="btn-cancel" id="btn-cancel">Atšaukti</button>
+      <button class="btn-primary" id="btn-save">Išsaugoti</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+/* ── CONSTANTS ── */
+const EMPLOYEES = [
+  { id: 'alanas',  label: 'Alanas',  short: 'A' },
+  { id: 'sigitas', label: 'Sigitas', short: 'S' },
+  { id: 'darius',  label: 'Darius',  short: 'D' },
+];
+const START_H = 7, END_H = 18;
+const SLOT_COUNT = (END_H - START_H) * 2; // 22 half-hours
+
+const LT_DAYS = ['Sekmadienis','Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis','Penktadienis','Šeštadienis'];
+const LT_DAYS_SHORT = ['Sek','Pir','Ant','Tre','Ket','Pen','Šeš'];
+const LT_MONTHS = ['Sausio','Vasario','Kovo','Balandžio','Gegužės','Birželio','Liepos','Rugpjūčio','Rugsėjo','Spalio','Lapkričio','Gruodžio'];
+
+/* ── STATE ── */
+let currentView = 'day';
+let anchorDate = dateOnly(new Date());
+let events = [];
+let dragState = null;
+let editingId = null;
+let nowLineTimer = null;
+let currentUser = null;
+
+/* ── SERVER API ── */
+async function apiFetch(url, opts) {
+  const res = await fetch(url, {
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (res.status === 401) {
+    window.location.href = '/login.html';
+    throw new Error('Neprisijungta.');
+  }
+  if (!res.ok) {
+    let msg = 'Klaida (' + res.status + ')';
+    try { const data = await res.json(); if (data.error) msg = data.error; } catch (e) {}
+    throw new Error(msg);
+  }
+  if (res.status === 204) return null;
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/* ── DATE UTILS ── */
+function dateOnly(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function addDays(d, n) {
+  const r = new Date(d); r.setDate(r.getDate() + n); return r;
+}
+function isoDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function parseIso(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function getMondayOf(d) {
+  const day = d.getDay(); // 0=Sun
+  const diff = (day === 0) ? -6 : 1 - day;
+  return addDays(d, diff);
+}
+function timeToSlot(t) { // "07:30" → 1
+  const [h,m] = t.split(':').map(Number);
+  return (h - START_H) * 2 + (m >= 30 ? 1 : 0);
+}
+function slotToTime(s) {
+  const h = START_H + Math.floor(s / 2);
+  const m = (s % 2) * 30;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+function timeStr(t) { return t; }
+
+/* ── VIEW DATES ── */
+function getViewDates() {
+  if (currentView === 'day') return [dateOnly(anchorDate)];
+  if (currentView === '3days') return [0,1,2].map(i => addDays(anchorDate, i));
+  // week: Mon–Sun
+  const mon = getMondayOf(anchorDate);
+  return [0,1,2,3,4,5,6].map(i => addDays(mon, i));
+}
+
+function navigate(dir) {
+  const steps = { day: 1, '3days': 3, week: 7 };
+  anchorDate = addDays(anchorDate, dir * steps[currentView]);
+  render();
+}
+
+/* ── FORMAT HEADER DATE ── */
+function formatHeaderDate(d, view) {
+  const dn = LT_DAYS[d.getDay()];
+  const dd = d.getDate();
+  const mm = LT_MONTHS[d.getMonth()];
+  if (view === 'day') return { name: dn, date: dd + ' ' + mm + ' ' + d.getFullYear() };
+  if (view === '3days') return { name: LT_DAYS_SHORT[d.getDay()], date: dd + '.' + String(d.getMonth()+1).padStart(2,'0') };
+  return { name: LT_DAYS_SHORT[d.getDay()], date: dd + '.' + String(d.getMonth()+1).padStart(2,'0') };
+}
+function formatNavDisplay() {
+  const dates = getViewDates();
+  const f = d => d.getDate() + ' ' + LT_MONTHS[d.getMonth()].slice(0,3) + ' ' + d.getFullYear();
+  if (currentView === 'day') return f(dates[0]);
+  return f(dates[0]) + ' – ' + f(dates[dates.length-1]);
+}
+
+/* ── MAIN RENDER ── */
+function render() {
+  document.getElementById('date-display').textContent = formatNavDisplay();
+  buildHeaderAndGrid();
+  renderEvents();
+  updateNowLine();
+}
+
+function buildHeaderAndGrid() {
+  const dates = getViewDates();
+  const numDays = dates.length;
+  const numCols = numDays * EMPLOYEES.length;
+  const todayStr = isoDate(dateOnly(new Date()));
+
+  // Build CSS grid template
+  // Columns: each employee column gets 1fr
+  const colTemplate = Array(numCols).fill('1fr').join(' ');
+
+  /* ── HEADER ── */
+  const colHeaders = document.getElementById('col-headers');
+  colHeaders.innerHTML = '';
+  colHeaders.className = 'view-' + currentView;
+  colHeaders.style.gridTemplateColumns = colTemplate;
+  colHeaders.style.gridTemplateRows = 'auto auto';
+
+  const todayIso = todayStr;
+  dates.forEach((d, di) => {
+    const iso = isoDate(d);
+    const isToday = iso === todayIso;
+    const fh = formatHeaderDate(d, currentView);
+
+    // Day group header (spans 3 employee columns)
+    const dh = document.createElement('div');
+    dh.className = 'day-group-header' + (isToday ? ' today-header' : '');
+    dh.style.gridColumn = (di * 3 + 1) + ' / span 3';
+    dh.style.gridRow = '1';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'day-name';
+    nameEl.textContent = fh.name;
+    const dateEl = document.createElement('div');
+    dateEl.className = 'day-date';
+    dateEl.textContent = fh.date;
+    dh.appendChild(nameEl);
+    dh.appendChild(dateEl);
+    colHeaders.appendChild(dh);
+
+    // Employee headers
+    EMPLOYEES.forEach((emp, ei) => {
+      const eh = document.createElement('div');
+      eh.className = 'emp-header emp-' + emp.id;
+      eh.style.gridColumn = (di * 3 + ei + 1) + '';
+      eh.style.gridRow = '2';
+      eh.title = emp.label;
+      // Show full name in day/3day, short in week
+      eh.textContent = (currentView === 'week') ? emp.short : emp.label;
+      colHeaders.appendChild(eh);
+    });
+  });
+
+  /* ── TIME LABELS ── */
+  const timeLabelsCont = document.getElementById('time-labels');
+  timeLabelsCont.innerHTML = '';
+  for (let s = 0; s < SLOT_COUNT; s++) {
+    const div = document.createElement('div');
+    div.className = 'time-label';
+    div.textContent = (s % 2 === 0) ? slotToTime(s) : '';
+    timeLabelsCont.appendChild(div);
+  }
+
+  /* ── GRID COLUMNS ── */
+  const calGrid = document.getElementById('cal-grid');
+  calGrid.innerHTML = '';
+  calGrid.style.gridTemplateColumns = colTemplate;
+
+  dates.forEach((d, di) => {
+    EMPLOYEES.forEach((emp, ei) => {
+      const colDiv = document.createElement('div');
+      colDiv.className = 'grid-col' + (ei === 0 && di > 0 ? ' day-sep' : '');
+      colDiv.dataset.date = isoDate(d);
+      colDiv.dataset.emp = emp.id;
+      colDiv.dataset.di = di;
+      colDiv.dataset.ei = ei;
+
+      for (let s = 0; s < SLOT_COUNT; s++) {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.dataset.slot = s;
+        slot.addEventListener('mousedown', onSlotMousedown);
+        slot.addEventListener('click', onSlotClick);
+        colDiv.appendChild(slot);
+      }
+      calGrid.appendChild(colDiv);
+    });
+  });
+}
+
+/* ── EVENT RENDERING ── */
+function renderEvents() {
+  // Remove old cards
+  document.querySelectorAll('.event-card, .drag-preview').forEach(e => e.remove());
+
+  const dates = getViewDates();
+  const dateStrs = dates.map(d => isoDate(d));
+
+  // For each column, collect events that appear there
+  // key: "date|emp"
+  const colEventsMap = {}; // "date|emp" -> [{ev, slotStart, slotEnd}]
+
+  events.forEach(ev => {
+    // Find all dates in range that are in view
+    const from = parseIso(ev.dateFrom);
+    const to = parseIso(ev.dateTo || ev.dateFrom);
+    dates.forEach(d => {
+      if (d >= from && d <= to) {
+        const ds = isoDate(d);
+        const key = ds + '|' + ev.emp;
+        if (!colEventsMap[key]) colEventsMap[key] = [];
+        const ss = timeToSlot(ev.start);
+        const se = timeToSlot(ev.end);
+        colEventsMap[key].push({ ev, slotStart: ss, slotEnd: se });
+      }
+    });
+  });
+
+  const calGrid = document.getElementById('cal-grid');
+  const cols = calGrid.querySelectorAll('.grid-col');
+
+  cols.forEach(colDiv => {
+    const dateStr = colDiv.dataset.date;
+    const empId = colDiv.dataset.emp;
+    const key = dateStr + '|' + empId;
+    const colEvents = colEventsMap[key] || [];
+    if (colEvents.length === 0) return;
+
+    // Compute overlapping groups and layout
+    const layout = computeLayout(colEvents);
+
+    layout.forEach(item => {
+      const { ev, slotStart, slotEnd, colIndex, colCount } = item;
+      const card = createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv);
+      colDiv.appendChild(card);
+    });
+  });
+}
+
+function computeLayout(colEvents) {
+  // Sort by start slot
+  const items = colEvents.map(ce => ({...ce})).sort((a,b) => a.slotStart - b.slotStart);
+
+  // Assign columns using interval scheduling
+  const cols = []; // each col is array of items (by colIndex)
+
+  items.forEach(item => {
+    let placed = false;
+    for (let c = 0; c < cols.length; c++) {
+      const lastInCol = cols[c][cols[c].length - 1];
+      if (lastInCol.slotEnd <= item.slotStart) {
+        cols[c].push(item);
+        item.colIndex = c;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      item.colIndex = cols.length;
+      cols.push([item]);
+    }
+  });
+
+  // Now determine colCount for each item (max columns in its overlap group)
+  // For simplicity: colCount = total number of cols that overlap with this item's time range
+  items.forEach(item => {
+    let maxCols = 0;
+    for (let t = item.slotStart; t < item.slotEnd; t++) {
+      let count = 0;
+      items.forEach(other => {
+        if (other.slotStart <= t && other.slotEnd > t) count++;
+      });
+      if (count > maxCols) maxCols = count;
+    }
+    item.colCount = maxCols;
+  });
+
+  return items;
+}
+
+function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
+  const slotH = 48; // var(--slot-h) in px
+  const top = slotStart * slotH;
+  const height = Math.max((slotEnd - slotStart) * slotH - 2, slotH * 0.5);
+
+  const card = document.createElement('div');
+  card.className = 'event-card emp-' + ev.emp;
+  card.dataset.id = ev.id;
+
+  // Position: absolute within colDiv
+  card.style.top = top + 'px';
+  card.style.height = height + 'px';
+
+  // Width and left based on overlap
+  const pct = 100 / colCount;
+  card.style.left = (colIndex * pct) + '%';
+  card.style.width = pct + '%';
+  card.style.paddingLeft = (colIndex > 0 ? 2 : 3) + 'px';
+
+  // Multi-day indicator
+  const multiDay = ev.dateFrom !== ev.dateTo;
+
+  // Content
+  const titleEl = document.createElement('div');
+  titleEl.className = 'event-title';
+  const clientText = escHtml(ev.client || '');
+  titleEl.textContent = clientText + (multiDay ? ' [kd]' : '');
+
+  const timeEl = document.createElement('div');
+  timeEl.className = 'event-time';
+  timeEl.textContent = ev.start + '–' + ev.end;
+
+  const carEl = document.createElement('div');
+  carEl.className = 'event-car';
+  carEl.textContent = escHtml(ev.car || '');
+
+  card.appendChild(titleEl);
+  if (height >= 30) card.appendChild(timeEl);
+  if (height >= 46) card.appendChild(carEl);
+
+  card.title = [ev.client, ev.car, ev.start+'–'+ev.end, ev.desc].filter(Boolean).join('\n') + '\n\n(Vilkite – perkelti. Vilkite kraštą – keisti trukmę.)';
+
+  // Move (drag whole card) — click without movement opens the edit modal
+  card.addEventListener('mousedown', e => onCardMousedown(e, ev));
+
+  // Resize handles (top = change start, bottom = change end)
+  const handleTop = document.createElement('div');
+  handleTop.className = 'resize-handle resize-top';
+  handleTop.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'top'));
+  const handleBottom = document.createElement('div');
+  handleBottom.className = 'resize-handle resize-bottom';
+  handleBottom.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'bottom'));
+  card.appendChild(handleTop);
+  card.appendChild(handleBottom);
+
+  return card;
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── NOW LINE ── */
+function updateNowLine() {
+  document.querySelectorAll('.now-line').forEach(e => e.remove());
+  const now = new Date();
+  const todayStr = isoDate(dateOnly(now));
+  const dates = getViewDates();
+  if (!dates.some(d => isoDate(d) === todayStr)) return;
+
+  const nowH = now.getHours() + now.getMinutes() / 60;
+  if (nowH < START_H || nowH > END_H) return;
+
+  const pct = (nowH - START_H) / (END_H - START_H);
+  const totalH = SLOT_COUNT * 48;
+  const top = Math.round(pct * totalH);
+
+  const calGrid = document.getElementById('cal-grid');
+  const line = document.createElement('div');
+  line.className = 'now-line';
+  line.style.top = top + 'px';
+  calGrid.appendChild(line);
+
+  if (nowLineTimer) clearTimeout(nowLineTimer);
+  nowLineTimer = setTimeout(updateNowLine, 30000);
+}
+
+/* ── DRAG TO CREATE ── */
+let dragStartSlot = null, dragEndSlot = null, dragColDiv = null, dragPreviewEl = null;
+
+function onSlotMousedown(e) {
+  if (e.button !== 0) return;
+  const slot = parseInt(e.currentTarget.dataset.slot);
+  const colDiv = e.currentTarget.closest('.grid-col');
+  dragStartSlot = slot;
+  dragEndSlot = slot;
+  dragColDiv = colDiv;
+
+  dragPreviewEl = document.createElement('div');
+  dragPreviewEl.className = 'drag-preview';
+  updateDragPreview();
+  colDiv.appendChild(dragPreviewEl);
+
+  const onMove = (ev) => {
+    const y = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+    const rect = colDiv.getBoundingClientRect();
+    const relY = y - rect.top + colDiv.closest('#cal-body').scrollTop;
+    const s = Math.max(0, Math.min(SLOT_COUNT - 1, Math.floor(relY / 48)));
+    if (s !== dragEndSlot) { dragEndSlot = s; updateDragPreview(); }
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (dragPreviewEl) dragPreviewEl.remove();
+    if (dragStartSlot !== null && dragEndSlot !== null && dragColDiv) {
+      const s = Math.min(dragStartSlot, dragEndSlot);
+      const e2 = Math.max(dragStartSlot, dragEndSlot) + 1;
+      openNewModal(dragColDiv.dataset.date, dragColDiv.dataset.emp, slotToTime(s), slotToTime(Math.min(e2, SLOT_COUNT)));
+    }
+    dragStartSlot = dragEndSlot = dragColDiv = dragPreviewEl = null;
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  e.preventDefault();
+}
+
+function updateDragPreview() {
+  if (!dragPreviewEl || dragStartSlot === null) return;
+  const s = Math.min(dragStartSlot, dragEndSlot);
+  const e = Math.max(dragStartSlot, dragEndSlot) + 1;
+  dragPreviewEl.style.top = (s * 48) + 'px';
+  dragPreviewEl.style.height = ((e - s) * 48) + 'px';
+  dragPreviewEl.style.left = '2px';
+  dragPreviewEl.style.right = '2px';
+}
+
+function onSlotClick(e) {
+  if (e.defaultPrevented) return;
+  const slot = parseInt(e.currentTarget.dataset.slot);
+  const colDiv = e.currentTarget.closest('.grid-col');
+  const endSlot = Math.min(slot + 1, SLOT_COUNT);
+  openNewModal(colDiv.dataset.date, colDiv.dataset.emp, slotToTime(slot), slotToTime(endSlot));
+}
+
+/* ── MOVE / RESIZE EXISTING EVENTS ── */
+let evDrag = null;
+const EDGE_PX = 40;      // how close to the calendar's left/right edge triggers auto-navigation
+const EDGE_TICKS = 3;    // ~ EDGE_TICKS * 180ms hold before jumping to prev/next period
+
+function colUnderPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  return el.closest('.grid-col');
+}
+function formatShortDate(d) {
+  return d.getDate() + '.' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function onCardMousedown(e, ev) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const colDiv = e.currentTarget.closest('.grid-col');
+  const calBody = document.getElementById('cal-body');
+  const rect = colDiv.getBoundingClientRect();
+  const relY = e.clientY - rect.top + calBody.scrollTop;
+  const grabSlot = Math.floor(relY / 48);
+  const slotStart0 = timeToSlot(ev.start);
+  const slotEnd0 = timeToSlot(ev.end);
+
+  evDrag = {
+    mode: 'move',
+    ev,
+    startClientX: e.clientX,
+    startClientY: e.clientY,
+    lastClientX: e.clientX,
+    lastClientY: e.clientY,
+    moved: false,
+    grabOffsetSlots: grabSlot - slotStart0,
+    duration: slotEnd0 - slotStart0,
+    origDateFrom: ev.dateFrom,
+    origDateTo: ev.dateTo || ev.dateFrom,
+    grabDateIso: colDiv.dataset.date,
+    curEmp: ev.emp,
+    curDateFrom: ev.dateFrom,
+    curDateTo: ev.dateTo || ev.dateFrom,
+    curSlotStart: slotStart0,
+    curSlotEnd: slotEnd0,
+    curColDiv: colDiv,
+    edgeTicks: 0,
+  };
+
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup', onDragEnd);
+  evDrag.edgeInterval = setInterval(edgeNavCheck, 180);
+}
+
+function onResizeMousedown(e, ev, edge) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const colDiv = e.currentTarget.closest('.grid-col');
+  const slotStart0 = timeToSlot(ev.start);
+  const slotEnd0 = timeToSlot(ev.end);
+  evDrag = {
+    mode: edge === 'top' ? 'resize-top' : 'resize-bottom',
+    ev,
+    startClientX: e.clientX,
+    startClientY: e.clientY,
+    lastClientX: e.clientX,
+    lastClientY: e.clientY,
+    moved: false,
+    colDiv,
+    curEmp: ev.emp,
+    curDateFrom: ev.dateFrom,
+    curDateTo: ev.dateTo || ev.dateFrom,
+    curSlotStart: slotStart0,
+    curSlotEnd: slotEnd0,
+  };
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!evDrag) return;
+  const dx = e.clientX - evDrag.startClientX;
+  const dy = e.clientY - evDrag.startClientY;
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) evDrag.moved = true;
+  evDrag.lastClientX = e.clientX;
+  evDrag.lastClientY = e.clientY;
+
+  if (evDrag.mode === 'move') {
+    updateMoveDrag(e.clientX, e.clientY);
+  } else {
+    updateResizeDrag(e.clientY);
+  }
+  renderGhost();
+}
+
+function updateMoveDrag(x, y) {
+  // Clamp into the grid area so hovering over the time gutter, headers, or just
+  // outside the calendar (e.g. while triggering edge auto-navigation) still
+  // resolves to the nearest real column instead of doing nothing.
+  const calGrid = document.getElementById('cal-grid');
+  const gridRect = calGrid.getBoundingClientRect();
+  const cx = Math.min(Math.max(x, gridRect.left + 1), gridRect.right - 1);
+  const cy = Math.min(Math.max(y, gridRect.top + 1), gridRect.top + gridRect.height - 1);
+  const colDiv = colUnderPoint(cx, cy);
+  if (!colDiv) return; // keep last valid position
+  const calBody = document.getElementById('cal-body');
+  const rect = colDiv.getBoundingClientRect();
+  const relY = y - rect.top + calBody.scrollTop;
+  const rawSlot = Math.floor(relY / 48);
+  let slotStart = rawSlot - evDrag.grabOffsetSlots;
+  slotStart = Math.max(0, Math.min(SLOT_COUNT - evDrag.duration, slotStart));
+  const slotEnd = slotStart + evDrag.duration;
+
+  const newDateIso = colDiv.dataset.date;
+  const newEmp = colDiv.dataset.emp;
+  const dayDelta = Math.round((parseIso(newDateIso) - parseIso(evDrag.grabDateIso)) / 86400000);
+
+  evDrag.curEmp = newEmp;
+  evDrag.curDateFrom = isoDate(addDays(parseIso(evDrag.origDateFrom), dayDelta));
+  evDrag.curDateTo = isoDate(addDays(parseIso(evDrag.origDateTo), dayDelta));
+  evDrag.curSlotStart = slotStart;
+  evDrag.curSlotEnd = slotEnd;
+  evDrag.curColDiv = colDiv;
+}
+
+function updateResizeDrag(y) {
+  const colDiv = evDrag.colDiv;
+  const calBody = document.getElementById('cal-body');
+  const rect = colDiv.getBoundingClientRect();
+  const relY = y - rect.top + calBody.scrollTop;
+  const rawSlot = Math.round(relY / 48);
+  if (evDrag.mode === 'resize-top') {
+    evDrag.curSlotStart = Math.max(0, Math.min(evDrag.curSlotEnd - 1, rawSlot));
+  } else {
+    evDrag.curSlotEnd = Math.min(SLOT_COUNT, Math.max(evDrag.curSlotStart + 1, rawSlot));
+  }
+}
+
+function renderGhost() {
+  removeGhost();
+  const colDiv = evDrag.mode === 'move' ? evDrag.curColDiv : evDrag.colDiv;
+  if (!colDiv) return;
+  const g = document.createElement('div');
+  g.className = 'drag-preview move-ghost';
+  g.style.top = (evDrag.curSlotStart * 48) + 'px';
+  g.style.height = Math.max((evDrag.curSlotEnd - evDrag.curSlotStart) * 48 - 2, 20) + 'px';
+  g.style.left = '2px';
+  g.style.right = '2px';
+
+  const label = document.createElement('div');
+  label.className = 'ghost-label';
+  if (evDrag.mode === 'move') {
+    const empObj = EMPLOYEES.find(x => x.id === evDrag.curEmp);
+    label.textContent = (empObj ? empObj.label : '') + ' • ' + formatShortDate(parseIso(colDiv.dataset.date)) + ' ' + slotToTime(evDrag.curSlotStart) + '–' + slotToTime(evDrag.curSlotEnd);
+  } else {
+    label.textContent = slotToTime(evDrag.curSlotStart) + '–' + slotToTime(evDrag.curSlotEnd);
+  }
+  g.appendChild(label);
+  colDiv.appendChild(g);
+
+  document.querySelectorAll('.event-card[data-id="' + evDrag.ev.id + '"]').forEach(c => c.classList.add('dragging-source'));
+}
+function removeGhost() {
+  document.querySelectorAll('.drag-preview.move-ghost').forEach(el => el.remove());
+}
+
+function edgeNavCheck() {
+  if (!evDrag || evDrag.mode !== 'move') return;
+  const calBody = document.getElementById('cal-body');
+  const rect = calBody.getBoundingClientRect();
+  const x = evDrag.lastClientX;
+  let dir = 0;
+  if (x < rect.left + EDGE_PX) dir = -1;
+  else if (x > rect.right - EDGE_PX) dir = 1;
+
+  if (dir === 0) { evDrag.edgeTicks = 0; return; }
+  evDrag.edgeTicks++;
+  if (evDrag.edgeTicks >= EDGE_TICKS) {
+    evDrag.edgeTicks = 0;
+    navigate(dir);
+    updateMoveDrag(evDrag.lastClientX, evDrag.lastClientY);
+    renderGhost();
+  }
+}
+
+function onDragEnd(e) {
+  if (!evDrag) return;
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  if (evDrag.edgeInterval) clearInterval(evDrag.edgeInterval);
+  removeGhost();
+  document.querySelectorAll('.dragging-source').forEach(c => c.classList.remove('dragging-source'));
+
+  const wasMoved = evDrag.moved;
+  const ev = evDrag.ev;
+  const mode = evDrag.mode;
+
+  if (!wasMoved) {
+    evDrag = null;
+    openEditModal(ev.id);
+    return;
+  }
+
+  const idx = events.findIndex(x => x.id === ev.id);
+  if (idx === -1) { evDrag = null; render(); return; }
+
+  const patch = {
+    start: slotToTime(evDrag.curSlotStart),
+    end: slotToTime(evDrag.curSlotEnd),
+  };
+  if (mode === 'move') {
+    patch.emp = evDrag.curEmp;
+    patch.dateFrom = evDrag.curDateFrom;
+    patch.dateTo = evDrag.curDateTo;
+  }
+  evDrag = null;
+
+  // Optimistiškai atnaujina iškart, kad vilkimas jaustųsi greitas, o po to
+  // patvirtina/sinchronizuoja su serveriu (ir atšaukia, jei nepavyksta).
+  const prevSnapshot = { ...events[idx] };
+  events[idx] = { ...events[idx], ...patch };
+  render();
+
+  apiFetch('/api/events/' + ev.id, { method: 'PUT', body: JSON.stringify(patch) })
+    .then(updated => {
+      const i2 = events.findIndex(x => x.id === ev.id);
+      if (i2 !== -1) { events[i2] = updated; render(); }
+    })
+    .catch(err => {
+      const i2 = events.findIndex(x => x.id === ev.id);
+      if (i2 !== -1) { events[i2] = prevSnapshot; render(); }
+      alert('Nepavyko išsaugoti pakeitimo: ' + err.message);
+    });
+}
+
+/* ── MODAL ── */
+function openNewModal(dateStr, empId, startT, endT) {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Naujas darbas';
+  document.getElementById('btn-delete').style.display = 'none';
+  document.getElementById('f-emp').value = empId;
+  document.getElementById('f-client').value = '';
+  document.getElementById('f-car').value = '';
+  document.getElementById('f-date-from').value = dateStr;
+  document.getElementById('f-date-to').value = dateStr;
+  document.getElementById('f-start').value = startT;
+  document.getElementById('f-end').value = endT;
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-error').style.display = 'none';
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('f-client').focus();
+}
+
+function openEditModal(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Redaguoti darbą';
+  document.getElementById('btn-delete').style.display = '';
+  document.getElementById('f-emp').value = ev.emp;
+  document.getElementById('f-client').value = ev.client || '';
+  document.getElementById('f-car').value = ev.car || '';
+  document.getElementById('f-date-from').value = ev.dateFrom;
+  document.getElementById('f-date-to').value = ev.dateTo || ev.dateFrom;
+  document.getElementById('f-start').value = ev.start;
+  document.getElementById('f-end').value = ev.end;
+  document.getElementById('f-desc').value = ev.desc || '';
+  document.getElementById('f-error').style.display = 'none';
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.add('hidden');
+  editingId = null;
+}
+
+async function saveModal() {
+  const emp = document.getElementById('f-emp').value;
+  const client = document.getElementById('f-client').value.trim();
+  const car = document.getElementById('f-car').value.trim();
+  const dateFrom = document.getElementById('f-date-from').value;
+  const dateTo = document.getElementById('f-date-to').value || dateFrom;
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const errEl = document.getElementById('f-error');
+
+  if (!dateFrom) { showErr('Pasirinkite datą.'); return; }
+  if (!start || !end) { showErr('Įveskite laiką.'); return; }
+  if (end <= start) { showErr('Pabaiga turi būti vėlesnė už pradžią.'); return; }
+  if (end > '18:00') { showErr('Pabaiga negali būti vėlesnė nei 18:00.'); return; }
+  if (start < '07:00') { showErr('Pradžia negali būti anksčiau nei 07:00.'); return; }
+  if (dateTo < dateFrom) { showErr('Data „iki" negali būti ankstesnė nei data „nuo".'); return; }
+  errEl.style.display = 'none';
+
+  const evData = { emp, client, car, dateFrom, dateTo, start, end, desc };
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.disabled = true;
+  try {
+    if (editingId) {
+      const updated = await apiFetch('/api/events/' + editingId, { method: 'PUT', body: JSON.stringify(evData) });
+      const idx = events.findIndex(e => e.id === editingId);
+      if (idx !== -1) events[idx] = updated;
+    } else {
+      const created = await apiFetch('/api/events', { method: 'POST', body: JSON.stringify(evData) });
+      events.push(created);
+    }
+    closeModal();
+    render();
+  } catch (err) {
+    showErr(err.message);
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
+async function deleteEvent() {
+  if (!editingId) return;
+  if (!confirm('Tikrai ištrinti šį įrašą?')) return;
+  const id = editingId;
+  try {
+    await apiFetch('/api/events/' + id, { method: 'DELETE' });
+    events = events.filter(e => e.id !== id);
+    closeModal();
+    render();
+  } catch (err) {
+    showErr(err.message);
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('f-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+/* ── INIT & EVENTS ── */
+document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
+document.getElementById('btn-next').addEventListener('click', () => navigate(1));
+document.getElementById('btn-today').addEventListener('click', () => { anchorDate = dateOnly(new Date()); render(); });
+document.getElementById('btn-new').addEventListener('click', () => {
+  const dates = getViewDates();
+  openNewModal(isoDate(dates[0]), 'alanas', '07:00', '07:30');
+});
+
+document.querySelectorAll('[data-view]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentView = btn.dataset.view;
+    document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+document.getElementById('btn-save').addEventListener('click', saveModal);
+document.getElementById('btn-cancel').addEventListener('click', closeModal);
+document.getElementById('btn-delete').addEventListener('click', deleteEvent);
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('btn-logout').addEventListener('click', async () => {
+  try { await apiFetch('/api/logout', { method: 'POST' }); } catch (e) {}
+  window.location.href = '/login.html';
+});
+
+/* ── START ── */
+(async function init() {
+  try {
+    const me = await apiFetch('/api/me');
+    currentUser = me.user;
+    document.getElementById('user-badge').innerHTML = 'Prisijungęs: <b>' + escHtml(currentUser.displayName) + '</b>';
+  } catch (e) {
+    return; // apiFetch jau nukreipė į /login.html
+  }
+
+  try {
+    events = await apiFetch('/api/events');
+  } catch (err) {
+    events = [];
+    console.error('Nepavyko įkelti įrašų:', err);
+    alert('Nepavyko įkelti duomenų iš serverio: ' + err.message);
+  }
+
+  render();
+
+  // Scroll to 7:00 area (a bit)
+  setTimeout(() => {
+    const body = document.getElementById('cal-body');
+    body.scrollTop = 0;
+  }, 50);
+})();
+
+})();
+</script>
+</body>
+</html>

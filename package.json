@@ -1,0 +1,14 @@
+{
+  "name": "autoservisas-kalendorius",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auto serviso kalendorius su bendra duomenų baze ir atskirais darbuotojų prisijungimais. Naudoja tik Node.js integruotus modulius — priklausomybių diegti nereikia.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "set-password": "node scripts/set-password.js"
+  },
+  "dependencies": {}
+}
