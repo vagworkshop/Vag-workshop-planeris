@@ -1010,6 +1010,12 @@ function timeToHourFloat(t) {
 function isWaitingTask(ev) {
   return !!ev.start && timeToHourFloat(ev.start) < WORK_START_H;
 }
+// Laukiantis darbas (dar neturi paskirto laiko) kabo "Laukiantys" juostoje
+// VISOSE dienose dvi savaites į priekį nuo tos dienos, kai buvo įvestas —
+// ne tik savo dateFrom/dateTo intervale. Vos tik jis nukeliamas žemyn į
+// tikrą laiko juostą (start >= 07:00, isWaitingTask() nebegrąžina true),
+// vėl rodomas tik pagal savo tikrą dateFrom/dateTo, kaip ir kiti darbai.
+const WAITING_HORIZON_DAYS = 14;
 function isEffectivelyActive(ev, colDateStr) {
   // Bet kokia ne-"planned" būsena (baigta, reikia suvedimo, reikia plovimo...)
   // vienodai stabdo automatinį vykdomo darbo statusą ir ilgėjimą.
@@ -1044,7 +1050,11 @@ function renderEvents() {
   events.forEach(ev => {
     // Find all dates in range that are in view
     const from = parseIso(ev.dateFrom);
-    const to = parseIso(ev.dateTo || ev.dateFrom);
+    let to = parseIso(ev.dateTo || ev.dateFrom);
+    if (isWaitingTask(ev)) {
+      const horizon = addDays(from, WAITING_HORIZON_DAYS - 1);
+      if (horizon > to) to = horizon;
+    }
     dates.forEach(d => {
       if (d >= from && d <= to) {
         const ds = isoDate(d);
@@ -1322,6 +1332,11 @@ function onCardMousedown(e, ev) {
     origDateFrom: ev.dateFrom,
     origDateTo: ev.dateTo || ev.dateFrom,
     grabDateIso: colDiv.dataset.date,
+    // Laukiantis darbas gali būti "pakabintas" (rodomas) dienos stulpelyje,
+    // kuris nėra jo tikroji dateFrom — tai tik vizuali projekcija. Todėl jį
+    // vilkstant, naują datą imame tiesiai iš stulpelio, į kurį numetamas
+    // (žr. updateMoveDrag()), o ne pagal poslinkį nuo pagriebimo dienos.
+    grabWasWaiting: isWaitingTask(ev),
     curLift: ev.lift,
     curDateFrom: ev.dateFrom,
     curDateTo: ev.dateTo || ev.dateFrom,
@@ -1398,11 +1413,20 @@ function updateMoveDrag(x, y) {
 
   const newDateIso = colDiv.dataset.date;
   const newLift = colDiv.dataset.lift;
-  const dayDelta = Math.round((parseIso(newDateIso) - parseIso(evDrag.grabDateIso)) / 86400000);
 
   evDrag.curLift = newLift;
-  evDrag.curDateFrom = isoDate(addDays(parseIso(evDrag.origDateFrom), dayDelta));
-  evDrag.curDateTo = isoDate(addDays(parseIso(evDrag.origDateTo), dayDelta));
+  if (evDrag.grabWasWaiting) {
+    // Buvo "laukiantys" projekcija — perkeliama tiesiai į stulpelį, kuriame
+    // paleidžiama (žr. grabWasWaiting aukščiau), išlaikant originalų dienų
+    // ilgį (jei laukiantis darbas retai, bet vis dėlto apima kelias dienas).
+    const spanDays = Math.round((parseIso(evDrag.origDateTo) - parseIso(evDrag.origDateFrom)) / 86400000);
+    evDrag.curDateFrom = newDateIso;
+    evDrag.curDateTo = isoDate(addDays(parseIso(newDateIso), spanDays));
+  } else {
+    const dayDelta = Math.round((parseIso(newDateIso) - parseIso(evDrag.grabDateIso)) / 86400000);
+    evDrag.curDateFrom = isoDate(addDays(parseIso(evDrag.origDateFrom), dayDelta));
+    evDrag.curDateTo = isoDate(addDays(parseIso(evDrag.origDateTo), dayDelta));
+  }
   evDrag.curSlotStart = slotStart;
   evDrag.curSlotEnd = slotEnd;
   evDrag.curColDiv = colDiv;
