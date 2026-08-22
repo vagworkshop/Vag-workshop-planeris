@@ -12,6 +12,7 @@ const { URL } = require('url');
 
 const { withDb, readDb } = require('./lib/db');
 const { seedUsers, verifyLogin, signToken, verifyToken, SESSION_MAX_AGE_MS } = require('./lib/auth');
+const { hashPassword, verifyPassword } = require('./lib/security');
 const { validateEvent } = require('./lib/validate');
 const { parseCookies, serializeCookie, readJsonBody, sendJson } = require('./lib/http-utils');
 const { serveStatic } = require('./lib/static');
@@ -64,6 +65,12 @@ function canAccessLift(user, liftId) {
   return user.lifts.includes(liftId);
 }
 
+// Darbuotojo (role: "employee") paskyra kalendorių tik stebi — kurti, redaguoti
+// ar trinti darbus gali tik pilnos prieigos paskyros (savininkas, priėmėjas).
+function isReadOnly(user) {
+  return user.role === 'employee';
+}
+
 function setAuthCookie(res, token) {
   res.setHeader('Set-Cookie', serializeCookie('token', token, {
     httpOnly: true,
@@ -112,6 +119,29 @@ async function handleApi(req, res, pathname, method) {
     } });
   }
 
+  if (pathname === '/api/change-password' && method === 'POST') {
+    const body = await readJsonBody(req);
+    const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
+    const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+    if (!currentPassword || !newPassword) {
+      return sendJson(res, 400, { error: 'Užpildykite abu slaptažodžio laukus.' });
+    }
+    if (newPassword.length < 4) {
+      return sendJson(res, 400, { error: 'Naujas slaptažodis per trumpas (bent 4 simboliai).' });
+    }
+
+    let errStatus = null, errMsg = null;
+    await withDb(db => {
+      const dbUser = db.users.find(u => u.username === user.username);
+      if (!dbUser || !verifyPassword(currentPassword, dbUser.passwordHash)) {
+        errStatus = 401; errMsg = 'Neteisingas dabartinis slaptažodis.'; return;
+      }
+      dbUser.passwordHash = hashPassword(newPassword);
+    });
+    if (errStatus) return sendJson(res, errStatus, { error: errMsg });
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (pathname === '/api/events' && method === 'GET') {
     const db = readDb();
     const visible = user.lifts ? db.events.filter(e => user.lifts.includes(e.lift)) : db.events;
@@ -119,6 +149,9 @@ async function handleApi(req, res, pathname, method) {
   }
 
   if (pathname === '/api/events' && method === 'POST') {
+    if (isReadOnly(user)) {
+      return sendJson(res, 403, { error: 'Jūsų paskyra turi tik peržiūros teises — negalite kurti darbų.' });
+    }
     const body = await readJsonBody(req);
     const data = pickFields(body);
     if (!data.dateTo) data.dateTo = data.dateFrom;
@@ -151,6 +184,21 @@ async function handleApi(req, res, pathname, method) {
     const id = decodeURIComponent(eventIdMatch[1]);
     const body = await readJsonBody(req);
     const patch = pickFields(body);
+
+    // Darbuotojo (role: "employee") paskyra negali redaguoti jokių kitų
+    // darbo laukų — leidžiama tik keisti būseną (status), o kartu su ja
+    // (jei reikia užfiksuoti realų pabaigos laiką sustabdant ilgėjimą) —
+    // ir "end" lauką. Bet koks kitas laukas patch'e — atmetama.
+    if (isReadOnly(user)) {
+      const EMP_ALLOWED_PATCH_FIELDS = ['status', 'end'];
+      const patchKeys = Object.keys(patch);
+      const isStatusOnlyChange = patchKeys.length > 0 &&
+        patchKeys.every(k => EMP_ALLOWED_PATCH_FIELDS.includes(k)) &&
+        patchKeys.includes('status');
+      if (!isStatusOnlyChange) {
+        return sendJson(res, 403, { error: 'Jūsų paskyra gali keisti tik darbo būseną.' });
+      }
+    }
     let result = null, errStatus = null, errMsg = null;
 
     await withDb(db => {
@@ -173,6 +221,9 @@ async function handleApi(req, res, pathname, method) {
   }
 
   if (eventIdMatch && method === 'DELETE') {
+    if (isReadOnly(user)) {
+      return sendJson(res, 403, { error: 'Jūsų paskyra turi tik peržiūros teises — negalite trinti darbų.' });
+    }
     const id = decodeURIComponent(eventIdMatch[1]);
     let found = false;
     await withDb(db => {

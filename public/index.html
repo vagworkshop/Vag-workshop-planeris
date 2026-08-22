@@ -52,12 +52,18 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
   font-size: 15px;
   height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -206,6 +212,20 @@ main {
   border-top: 1px solid var(--border);
 }
 .time-label:first-child { border-top: none; }
+/* "Laukiantys" juosta — pirmosios 2 valandos (05:00–07:00) tinklelyje,
+   naudojamos dar be konkretaus laiko laukiantiems darbams pasikabinti. */
+.time-label.waiting-label {
+  display: block;
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: right;
+  white-space: normal;
+  padding-top: 4px;
+}
+.time-label.waiting-boundary { border-top: 2px solid var(--accent); }
 
 /* Grid area */
 #cal-grid {
@@ -235,6 +255,9 @@ main {
 .slot:first-child { border-top: none; }
 .slot:hover { background: rgba(249,115,22,.07); }
 .slot.dragging-over { background: rgba(249,115,22,.18); }
+.slot.waiting-slot { background: rgba(250,204,21,.05); }
+.slot.waiting-slot:hover { background: rgba(250,204,21,.12); }
+.slot.waiting-boundary { border-top: 2px solid var(--accent); }
 
 /* Day separator */
 .day-sep {
@@ -310,6 +333,8 @@ main {
 }
 .event-card:active { cursor: grabbing; }
 .event-card.dragging-source { opacity: .3; box-shadow: none; }
+.event-card.readonly { cursor: default; }
+.event-card.readonly:active { cursor: default; }
 .event-card.emp-alanas { background: var(--c-alanas-bg); border-left-color: var(--c-alanas); }
 .event-card.emp-sigitas { background: var(--c-sigitas-bg); border-left-color: var(--c-sigitas); }
 .event-card.emp-darius  { background: var(--c-darius-bg); border-left-color: var(--c-darius); }
@@ -504,7 +529,13 @@ main {
 /* ── SETTINGS ── */
 .theme-choice { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .theme-choice.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-#btn-toggle-done.active { background: #4b5563; border-color: #4b5563; color: #fff; }
+/* ── DARBO BŪSENOS MYGTUKAI (modale) ── */
+.status-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.status-btn-row .btn-status { flex: 1 1 130px; font-size: 12px; padding: 8px 6px; text-align: center; }
+#btn-status-done.active { background: #4b5563; border-color: #4b5563; color: #fff; }
+#btn-status-needs-entry.active,
+#btn-status-needs-wash.active { background: #a13d3d; border-color: #a13d3d; color: #fff; }
+#btn-status-undo { margin-top: 6px; }
 
 /* ── UŽDUOTIES BŪSENA (kortelėje) ── */
 .event-card.status-done {
@@ -515,8 +546,49 @@ main {
 .event-card.status-done .event-title,
 .event-card.status-done .event-time,
 .event-card.status-done .event-car { color: var(--text3); }
+.event-card.status-needs-entry,
+.event-card.status-needs-wash {
+  background: #a13d3d !important;
+  border-left-color: #7a2f2f !important;
+}
+.event-card.status-needs-entry:hover,
+.event-card.status-needs-wash:hover { background: #b34848 !important; }
+.event-card.status-needs-entry .event-title,
+.event-card.status-needs-entry .event-time,
+.event-card.status-needs-entry .event-car,
+.event-card.status-needs-wash .event-title,
+.event-card.status-needs-wash .event-time,
+.event-card.status-needs-wash .event-car { color: #fff; }
 .event-card.status-active { box-shadow: 0 0 0 1px #2563eb, 0 2px 6px rgba(0,0,0,.4); }
 .event-card.status-active:hover { box-shadow: 0 0 0 1px #2563eb, 0 4px 12px rgba(0,0,0,.6); }
+
+/* ── MOBILUS VAIZDAS (telefonai) ──
+   Viršutinė juosta (header) siaurame ekrane netelpa į vieną eilutę su visais
+   mygtukais — anksčiau tai reikšdavo, kad dalis (pvz. Diena/3 dienos/Savaitė)
+   nusikelia už matomos srities ir pasiekiama tik slenkant/zoominant į šoną.
+   Žemiau perkomponuojame juostą į kelias pilno pločio eilutes, kad viskas
+   būtų iškart matoma ir paspaudžiama be jokio šoninio slinkimo. */
+@media (max-width: 700px) {
+  header {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 10px;
+    row-gap: 8px;
+    column-gap: 8px;
+  }
+  header .spacer { display: none; }
+  .legend { display: none; }
+  .user-badge { display: none; }
+  .logo { font-size: 15px; order: 1; }
+  .logo span { display: none; }
+  #btn-settings { order: 2; margin-left: auto; }
+  #btn-logout { order: 3; font-size: 11px; padding: 5px 8px; }
+  .nav-group { order: 4; flex-basis: 100%; justify-content: center; }
+  .view-group { order: 5; flex-basis: 100%; }
+  .view-group .btn { flex: 1; text-align: center; padding: 8px 4px; }
+  #btn-new { order: 6; flex-basis: 100%; margin-left: 0 !important; text-align: center; }
+  main { padding: 6px; }
+}
 </style>
 <script>
 // Pritaikoma prieš atvaizduojant puslapį, kad nemirksėtų neteisinga tema.
@@ -587,7 +659,26 @@ main {
         <button type="button" class="btn theme-choice" data-theme-choice="light" style="flex:1">☀️ Šviesus</button>
       </div>
     </div>
-    <div class="modal-actions">
+    <div style="border-top:1px solid var(--border); margin:16px 0 12px"></div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Slaptažodžio keitimas</label>
+    </div>
+    <div class="form-group">
+      <label for="pw-current">Dabartinis slaptažodis</label>
+      <input type="password" id="pw-current" autocomplete="current-password">
+    </div>
+    <div class="form-group">
+      <label for="pw-new">Naujas slaptažodis</label>
+      <input type="password" id="pw-new" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label for="pw-new2">Pakartokite naują slaptažodį</label>
+      <input type="password" id="pw-new2" autocomplete="new-password">
+    </div>
+    <button type="button" class="btn" id="btn-change-password" style="width:100%">Keisti slaptažodį</button>
+    <div class="error-msg" id="pw-error"></div>
+    <div class="error-msg" id="pw-success" style="color:#4ade80"></div>
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn-cancel" id="btn-settings-close">Uždaryti</button>
     </div>
   </div>
@@ -597,9 +688,14 @@ main {
 <div class="overlay hidden" id="overlay">
   <div class="modal" id="modal">
     <h2 id="modal-title">Naujas darbas</h2>
-    <div class="form-group" style="margin-bottom:14px">
-      <button type="button" class="btn" id="btn-toggle-done" style="width:100%">✓ Pažymėti baigta</button>
-      <div style="font-size:11px; color:var(--text3); margin-top:4px">Darbas kalendoriuje pats pasižymi vykdomu (▶), kai ateina jo laikas — nereikia paspausti atskirai.</div>
+    <div class="form-group" style="margin-bottom:14px" id="status-btn-group">
+      <div class="status-btn-row">
+        <button type="button" class="btn btn-status" id="btn-status-done">✓ Darbas baigtas</button>
+        <button type="button" class="btn btn-status" id="btn-status-needs-entry">❗ Baigta, reikia suvedimo</button>
+        <button type="button" class="btn btn-status" id="btn-status-needs-wash">❗ Baigta, reikia variklio plovimo</button>
+      </div>
+      <button type="button" class="btn" id="btn-status-undo" style="width:100%; display:none">↺ Grąžinti į suplanuotą</button>
+      <div style="font-size:11px; color:var(--text3); margin-top:4px">Darbas kalendoriuje pats pasižymi vykdomu (▶), kai ateina jo laikas — nereikia paspausti atskirai. (Laukiantiems darbams, sukurtiems 5.00–7.00 juostoje, tai negalioja.)</div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -630,11 +726,11 @@ main {
     <div class="form-row">
       <div class="form-group">
         <label>Pradžia</label>
-        <input type="time" id="f-start" min="07:00" max="18:00" step="1800">
+        <input type="time" id="f-start" min="05:00" max="18:00" step="1800">
       </div>
       <div class="form-group">
         <label>Pabaiga</label>
-        <input type="time" id="f-end" min="07:00" max="18:00" step="1800">
+        <input type="time" id="f-end" min="05:00" max="18:00" step="1800">
       </div>
     </div>
     <div class="form-row full">
@@ -675,8 +771,14 @@ function empForLift(liftId) {
   const lift = liftById(liftId);
   return lift ? EMPLOYEES.find(e => e.id === lift.empId) : null;
 }
-const START_H = 7, END_H = 18;
-const SLOT_COUNT = (END_H - START_H) * 2; // 22 half-hours
+// Tinklelis rodomas nuo 05:00, bet realios darbo valandos prasideda nuo
+// 07:00 — pirmosios 2 valandos (4 pusvalandžio langeliai) naudojamos kaip
+// "Laukiantys" juosta darbams be konkretaus laiko pasikabinti (žr.
+// isWaitingTask()). Vietoj 05:00/06:00 valandų žymų kairėje rašoma
+// "Laukiantys" (žr. buildHeaderAndGrid()).
+const START_H = 5, WORK_START_H = 7, END_H = 18;
+const SLOT_COUNT = (END_H - START_H) * 2; // 26 half-hours (13 val.)
+const WAITING_SLOTS = (WORK_START_H - START_H) * 2; // pirmi 4 langeliai = "Laukiantys" juosta
 
 const LT_DAYS = ['Sekmadienis','Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis','Penktadienis','Šeštadienis'];
 const LT_DAYS_SHORT = ['Sek','Pir','Ant','Tre','Ket','Pen','Šeš'];
@@ -688,14 +790,19 @@ let anchorDate = dateOnly(new Date());
 let events = [];
 let dragState = null;
 let editingId = null;
-let modalDone = false;
+let modalStatus = 'planned';
 let nowLineTimer = null;
 let currentUser = null;
 // Kalendoriuje rodomi keltuvai — pilnos prieigos vartotojams (savininkas,
 // priėmėjas) visi 4, darbuotojui tik jam priskirti (žr. applyUserAccess()).
 let VISIBLE_LIFTS = LIFTS;
+// Darbuotojo paskyra (Alanas/Sigitas/Darius) kalendorių tik stebi — negali
+// kurti, redaguoti, vilkti ar trinti darbų. Pilną prieigą turi tik
+// savininkas ir priėmėjas.
+let READ_ONLY = false;
 function applyUserAccess(user) {
   VISIBLE_LIFTS = (user.lifts && user.lifts.length) ? LIFTS.filter(l => user.lifts.includes(l.id)) : LIFTS;
+  READ_ONLY = user.role === 'employee';
 }
 
 /* ── SERVER API ── */
@@ -849,8 +956,13 @@ function buildHeaderAndGrid() {
   timeLabelsCont.innerHTML = '';
   for (let s = 0; s < SLOT_COUNT; s++) {
     const div = document.createElement('div');
-    div.className = 'time-label';
-    div.textContent = (s % 2 === 0) ? slotToTime(s) : '';
+    const isWaiting = s < WAITING_SLOTS;
+    div.className = 'time-label' + (isWaiting ? ' waiting-label' : '') + (s === WAITING_SLOTS ? ' waiting-boundary' : '');
+    if (s % 2 === 0) {
+      div.textContent = isWaiting ? 'Laukiantys' : slotToTime(s);
+    } else {
+      div.textContent = '';
+    }
     timeLabelsCont.appendChild(div);
   }
 
@@ -870,7 +982,7 @@ function buildHeaderAndGrid() {
 
       for (let s = 0; s < SLOT_COUNT; s++) {
         const slot = document.createElement('div');
-        slot.className = 'slot';
+        slot.className = 'slot' + (s < WAITING_SLOTS ? ' waiting-slot' : '') + (s === WAITING_SLOTS ? ' waiting-boundary' : '');
         slot.dataset.slot = s;
         slot.addEventListener('mousedown', onSlotMousedown);
         slot.addEventListener('click', onSlotClick);
@@ -888,12 +1000,21 @@ function buildHeaderAndGrid() {
 // laikas "seka" dabartinį laiką, jei dirbama ilgiau nei suplanuota — bet
 // tik tos dienos stulpelyje (į kitą dieną automatiškai nepersikelia) ir
 // tik iki darbo dienos pabaigos (18:00). Pažymėjus "Baigta", nustoja augti.
+// Šis "vykdomo darbo" mechanizmas negalioja darbams, sukurtiems
+// "Laukiantys" juostoje (05:00–07:00) — jie kabo ten tiesiog kaip
+// laukiantys eilės, be automatinio aktyvavimo/ilgėjimo.
 function timeToHourFloat(t) {
   const [h, m] = t.split(':').map(Number);
   return h + m / 60;
 }
+function isWaitingTask(ev) {
+  return !!ev.start && timeToHourFloat(ev.start) < WORK_START_H;
+}
 function isEffectivelyActive(ev, colDateStr) {
-  if (ev.status === 'done') return false;
+  // Bet kokia ne-"planned" būsena (baigta, reikia suvedimo, reikia plovimo...)
+  // vienodai stabdo automatinį vykdomo darbo statusą ir ilgėjimą.
+  if (ev.status && ev.status !== 'planned') return false;
+  if (isWaitingTask(ev)) return false;
   const todayStr = isoDate(dateOnly(new Date()));
   if (colDateStr !== todayStr) return false;
   const now = new Date();
@@ -1007,8 +1128,9 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   const lift = liftById(ev.lift);
   const colDateStr = colDiv.dataset.date;
   const active = isEffectivelyActive(ev, colDateStr);
-  const statusCls = (ev.status === 'done') ? ' status-done' : (active ? ' status-active' : '');
-  card.className = 'event-card emp-' + (lift ? lift.empId : '') + statusCls;
+  const STATUS_CLASS = { done: 'status-done', needs_entry: 'status-needs-entry', needs_wash: 'status-needs-wash' };
+  const statusCls = STATUS_CLASS[ev.status] ? ' ' + STATUS_CLASS[ev.status] : (active ? ' status-active' : '');
+  card.className = 'event-card emp-' + (lift ? lift.empId : '') + statusCls + (READ_ONLY ? ' readonly' : '');
   card.dataset.id = ev.id;
 
   // Position: absolute within colDiv
@@ -1028,7 +1150,8 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   const titleEl = document.createElement('div');
   titleEl.className = 'event-title';
   const clientText = escHtml(ev.client || '');
-  const statusIcon = (ev.status === 'done') ? '✓ ' : (active ? '▶ ' : '');
+  const STATUS_ICON = { done: '✓ ', needs_entry: '❗ ', needs_wash: '❗ ' };
+  const statusIcon = STATUS_ICON[ev.status] || (active ? '▶ ' : '');
   titleEl.textContent = statusIcon + clientText + (multiDay ? ' [kd]' : '');
 
   const timeEl = document.createElement('div');
@@ -1043,20 +1166,23 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   if (height >= 30) card.appendChild(timeEl);
   if (height >= 46) card.appendChild(carEl);
 
-  card.title = [ev.client, ev.car, ev.start+'–'+ev.end, ev.desc].filter(Boolean).join('\n') + '\n\n(Vilkite – perkelti. Vilkite kraštą – keisti trukmę.)';
+  card.title = [ev.client, ev.car, ev.start+'–'+ev.end, ev.desc].filter(Boolean).join('\n') +
+    (READ_ONLY ? '' : '\n\n(Vilkite – perkelti. Vilkite kraštą – keisti trukmę.)');
 
   // Move (drag whole card) — click without movement opens the edit modal
   card.addEventListener('mousedown', e => onCardMousedown(e, ev));
 
-  // Resize handles (top = change start, bottom = change end)
-  const handleTop = document.createElement('div');
-  handleTop.className = 'resize-handle resize-top';
-  handleTop.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'top'));
-  const handleBottom = document.createElement('div');
-  handleBottom.className = 'resize-handle resize-bottom';
-  handleBottom.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'bottom'));
-  card.appendChild(handleTop);
-  card.appendChild(handleBottom);
+  if (!READ_ONLY) {
+    // Resize handles (top = change start, bottom = change end)
+    const handleTop = document.createElement('div');
+    handleTop.className = 'resize-handle resize-top';
+    handleTop.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'top'));
+    const handleBottom = document.createElement('div');
+    handleBottom.className = 'resize-handle resize-bottom';
+    handleBottom.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'bottom'));
+    card.appendChild(handleTop);
+    card.appendChild(handleBottom);
+  }
 
   return card;
 }
@@ -1102,6 +1228,7 @@ function updateNowLine() {
 let dragStartSlot = null, dragEndSlot = null, dragColDiv = null, dragPreviewEl = null;
 
 function onSlotMousedown(e) {
+  if (READ_ONLY) return;
   if (e.button !== 0) return;
   const slot = parseInt(e.currentTarget.dataset.slot);
   const colDiv = e.currentTarget.closest('.grid-col');
@@ -1148,6 +1275,7 @@ function updateDragPreview() {
 }
 
 function onSlotClick(e) {
+  if (READ_ONLY) return;
   if (e.defaultPrevented) return;
   const slot = parseInt(e.currentTarget.dataset.slot);
   const colDiv = e.currentTarget.closest('.grid-col');
@@ -1173,6 +1301,7 @@ function onCardMousedown(e, ev) {
   if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
+  if (READ_ONLY) { openEditModal(ev.id); return; }
   const colDiv = e.currentTarget.closest('.grid-col');
   const rect = colDiv.getBoundingClientRect();
   const relY = e.clientY - rect.top;
@@ -1208,6 +1337,7 @@ function onCardMousedown(e, ev) {
 }
 
 function onResizeMousedown(e, ev, edge) {
+  if (READ_ONLY) return;
   if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
@@ -1402,31 +1532,54 @@ function populateLiftSelect() {
   });
 }
 
-function setModalDoneUI(done) {
-  modalDone = done;
-  const btn = document.getElementById('btn-toggle-done');
-  btn.textContent = done ? '↺ Grąžinti (atšaukti „baigta")' : '✓ Pažymėti baigta';
-  btn.classList.toggle('active', done);
+const STATUS_BTN_IDS = { done: 'btn-status-done', needs_entry: 'btn-status-needs-entry', needs_wash: 'btn-status-needs-wash' };
+
+function setModalStatusUI(status) {
+  modalStatus = status;
+  Object.values(STATUS_BTN_IDS).forEach(id => document.getElementById(id).classList.remove('active'));
+  if (STATUS_BTN_IDS[status]) document.getElementById(STATUS_BTN_IDS[status]).classList.add('active');
+  document.getElementById('btn-status-undo').style.display = (status === 'planned') ? 'none' : '';
+}
+
+// Tik peržiūros paskyroms (Alanas/Sigitas/Darius) — visi laukai neaktyvūs,
+// negalima kurti/trinti/redaguoti kitų duomenų. Tačiau darbo BŪSENOS
+// mygtukai (baigta / reikia suvedimo / reikia plovimo / grąžinti) lieka
+// aktyvūs — tai vienintelis dalykas, kurį jie gali keisti (serveris tai
+// papildomai užtikrina, žr. isReadOnly() / server.js PUT patikrą).
+function setModalReadOnlyUI(readOnly) {
+  ['f-lift','f-client','f-car','f-date-from','f-date-to','f-start','f-end','f-desc'].forEach(id => {
+    document.getElementById(id).disabled = readOnly;
+  });
+  if (readOnly) {
+    document.getElementById('btn-save').style.display = 'none';
+    document.getElementById('btn-delete').style.display = 'none';
+    document.getElementById('btn-cancel').textContent = 'Uždaryti';
+  } else {
+    document.getElementById('btn-save').style.display = '';
+    document.getElementById('btn-cancel').textContent = 'Atšaukti';
+  }
 }
 
 function eventCoversDate(ev, dateStr) {
   return ev.dateFrom <= dateStr && (ev.dateTo || ev.dateFrom) >= dateStr;
 }
 
-// Paspaudus "Pažymėti baigta"/"Grąžinti" jau egzistuojančiam (redaguojamam)
-// darbui — iškart išsaugoma serveryje, nereikia dar spausti "Išsaugoti".
-// Kuriant naują darbą (dar neturintį id) — tik pažymima formoje, išsaugoma
-// kartu su kitais laukais paspaudus "Išsaugoti".
-async function toggleModalDone() {
-  const newDone = !modalDone;
-  setModalDoneUI(newDone);
+// Paspaudus bet kurį būsenos mygtuką ("Darbas baigtas" / "Reikia suvedimo" /
+// "Reikia variklio plovimo" / "Grąžinti į suplanuotą") jau egzistuojančiam
+// (redaguojamam) darbui — iškart išsaugoma serveryje IR langas pats
+// užsidaro, nereikia dar spausti "Išsaugoti". Kuriant naują darbą (dar
+// neturintį id) — tik pažymima formoje, išsaugoma kartu su kitais laukais
+// paspaudus "Išsaugoti".
+async function setEventStatus(status) {
+  setModalStatusUI(status);
   if (!editingId) return;
   try {
-    const patch = { status: newDone ? 'done' : 'planned' };
-    // Pažymint "Baigta" darbą, kuris tuo metu buvo laikomas vykdomu (jau
-    // prasidėjęs šiandien) ir spėjo pasiilginti už suplanuoto laiko —
-    // užfiksuojame realų pabaigos laiką, kad kortelė nesusitrauktų atgal.
-    if (newDone) {
+    const patch = { status };
+    // Pažymint darbą baigtu / reikalaujantį dėmesio, kuris tuo metu buvo
+    // laikomas vykdomu (jau prasidėjęs šiandien) ir spėjo pasiilginti už
+    // suplanuoto laiko — užfiksuojame realų pabaigos laiką, kad kortelė
+    // nesusitrauktų atgal.
+    if (status !== 'planned') {
       const ev = events.find(e => e.id === editingId);
       const todayStr = isoDate(dateOnly(new Date()));
       if (ev && eventCoversDate(ev, todayStr) && isEffectivelyActive(ev, todayStr)) {
@@ -1440,19 +1593,24 @@ async function toggleModalDone() {
     const updated = await apiFetch('/api/events/' + editingId, { method: 'PUT', body: JSON.stringify(patch) });
     const idx = events.findIndex(e => e.id === editingId);
     if (idx !== -1) events[idx] = updated;
-    document.getElementById('f-end').value = updated.end;
+    closeModal();
     render();
   } catch (err) {
     showErr('Nepavyko išsaugoti būsenos: ' + err.message);
   }
 }
 
-document.getElementById('btn-toggle-done').addEventListener('click', toggleModalDone);
+document.getElementById('btn-status-done').addEventListener('click', () => setEventStatus('done'));
+document.getElementById('btn-status-needs-entry').addEventListener('click', () => setEventStatus('needs_entry'));
+document.getElementById('btn-status-needs-wash').addEventListener('click', () => setEventStatus('needs_wash'));
+document.getElementById('btn-status-undo').addEventListener('click', () => setEventStatus('planned'));
 
 function openNewModal(dateStr, liftId, startT, endT) {
+  if (READ_ONLY) return;
   editingId = null;
   document.getElementById('modal-title').textContent = 'Naujas darbas';
   document.getElementById('btn-delete').style.display = 'none';
+  populateLiftSelect();
   document.getElementById('f-lift').value = liftId;
   document.getElementById('f-client').value = '';
   document.getElementById('f-car').value = '';
@@ -1462,7 +1620,8 @@ function openNewModal(dateStr, liftId, startT, endT) {
   document.getElementById('f-end').value = endT;
   document.getElementById('f-desc').value = '';
   document.getElementById('f-error').style.display = 'none';
-  setModalDoneUI(false);
+  setModalStatusUI('planned');
+  setModalReadOnlyUI(false);
   document.getElementById('overlay').classList.remove('hidden');
   document.getElementById('f-client').focus();
 }
@@ -1471,8 +1630,9 @@ function openEditModal(id) {
   const ev = events.find(e => e.id === id);
   if (!ev) return;
   editingId = id;
-  document.getElementById('modal-title').textContent = 'Redaguoti darbą';
-  document.getElementById('btn-delete').style.display = '';
+  document.getElementById('modal-title').textContent = READ_ONLY ? 'Darbo informacija (tik peržiūra)' : 'Redaguoti darbą';
+  document.getElementById('btn-delete').style.display = READ_ONLY ? 'none' : '';
+  populateLiftSelect();
   document.getElementById('f-lift').value = ev.lift;
   document.getElementById('f-client').value = ev.client || '';
   document.getElementById('f-car').value = ev.car || '';
@@ -1482,7 +1642,8 @@ function openEditModal(id) {
   document.getElementById('f-end').value = ev.end;
   document.getElementById('f-desc').value = ev.desc || '';
   document.getElementById('f-error').style.display = 'none';
-  setModalDoneUI(ev.status === 'done');
+  setModalStatusUI(ev.status || 'planned');
+  setModalReadOnlyUI(READ_ONLY);
   document.getElementById('overlay').classList.remove('hidden');
 }
 
@@ -1506,11 +1667,11 @@ async function saveModal() {
   if (!start || !end) { showErr('Įveskite laiką.'); return; }
   if (end <= start) { showErr('Pabaiga turi būti vėlesnė už pradžią.'); return; }
   if (end > '18:00') { showErr('Pabaiga negali būti vėlesnė nei 18:00.'); return; }
-  if (start < '07:00') { showErr('Pradžia negali būti anksčiau nei 07:00.'); return; }
+  if (start < '05:00') { showErr('Pradžia negali būti anksčiau nei 05:00.'); return; }
   if (dateTo < dateFrom) { showErr('Data „iki" negali būti ankstesnė nei data „nuo".'); return; }
   errEl.style.display = 'none';
 
-  const evData = { lift, client, car, dateFrom, dateTo, start, end, desc, status: modalDone ? 'done' : 'planned' };
+  const evData = { lift, client, car, dateFrom, dateTo, start, end, desc, status: modalStatus };
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
   try {
@@ -1602,15 +1763,61 @@ function setTheme(t) {
 document.querySelectorAll('.theme-choice').forEach(b => {
   b.addEventListener('click', () => setTheme(b.dataset.themeChoice));
 });
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.add('hidden');
+  document.getElementById('pw-current').value = '';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-new2').value = '';
+  pwClearMsgs();
+}
 document.getElementById('btn-settings').addEventListener('click', () => {
   document.getElementById('settings-overlay').classList.remove('hidden');
 });
-document.getElementById('btn-settings-close').addEventListener('click', () => {
-  document.getElementById('settings-overlay').classList.add('hidden');
-});
+document.getElementById('btn-settings-close').addEventListener('click', closeSettings);
 document.getElementById('settings-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('settings-overlay')) {
-    document.getElementById('settings-overlay').classList.add('hidden');
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+});
+
+/* ── SLAPTAŽODŽIO KEITIMAS ── */
+function pwShowErr(msg) {
+  document.getElementById('pw-success').style.display = 'none';
+  const el = document.getElementById('pw-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function pwShowOk(msg) {
+  document.getElementById('pw-error').style.display = 'none';
+  const el = document.getElementById('pw-success');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function pwClearMsgs() {
+  document.getElementById('pw-error').style.display = 'none';
+  document.getElementById('pw-success').style.display = 'none';
+}
+document.getElementById('btn-change-password').addEventListener('click', async () => {
+  pwClearMsgs();
+  const current = document.getElementById('pw-current').value;
+  const next = document.getElementById('pw-new').value;
+  const next2 = document.getElementById('pw-new2').value;
+  if (!current || !next || !next2) { pwShowErr('Užpildykite visus laukus.'); return; }
+  if (next.length < 4) { pwShowErr('Naujas slaptažodis per trumpas (bent 4 simboliai).'); return; }
+  if (next !== next2) { pwShowErr('Naujas slaptažodis nesutampa su pakartotu.'); return; }
+  const btn = document.getElementById('btn-change-password');
+  btn.disabled = true;
+  try {
+    await apiFetch('/api/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: next }),
+    });
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-new2').value = '';
+    pwShowOk('Slaptažodis pakeistas.');
+  } catch (err) {
+    pwShowErr(err.message);
+  } finally {
+    btn.disabled = false;
   }
 });
 setTheme(getTheme());
@@ -1667,7 +1874,10 @@ window.addEventListener('focus', () => pollEvents());
     currentUser = me.user;
     applyUserAccess(currentUser);
     populateLiftSelect();
-    document.getElementById('user-badge').innerHTML = 'Prisijungęs: <b>' + escHtml(currentUser.displayName) + '</b>';
+    if (READ_ONLY) {
+      document.getElementById('btn-new').style.display = 'none';
+    }
+    document.getElementById('user-badge').innerHTML = 'Prisijungęs: <b>' + escHtml(currentUser.displayName) + '</b>' + (READ_ONLY ? ' <span style="opacity:.7">(tik peržiūra)</span>' : '');
   } catch (e) {
     return; // apiFetch jau nukreipė į /login.html
   }
@@ -1683,10 +1893,11 @@ window.addEventListener('focus', () => pollEvents());
   render();
   startPolling();
 
-  // Scroll to 7:00 area (a bit)
+  // Numatytai rodoma nuo 07:00 (kaip ir anksčiau) — "Laukiantys" juosta
+  // (05:00–07:00) lieka virš matomos srities, pasiekiama paslinkus aukštyn.
   setTimeout(() => {
     const body = document.getElementById('cal-body');
-    body.scrollTop = 0;
+    body.scrollTop = WAITING_SLOTS * 48;
   }, 50);
 })();
 
