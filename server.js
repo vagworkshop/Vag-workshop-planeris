@@ -21,7 +21,24 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 seedUsers();
 
-const ALLOWED_FIELDS = ['emp', 'client', 'car', 'dateFrom', 'dateTo', 'start', 'end', 'desc'];
+// Senesni įrašai buvo priskirti tiesiai darbuotojui (laukas "emp": alanas/
+// sigitas/darius). Pridėjus keltuvus, kiekvienas įrašas dabar priklauso
+// konkrečiam keltuvui (laukas "lift"). Ši funkcija vieną kartą serverio
+// paleidimo metu automatiškai priskiria seniems įrašams numatytąjį keltuvą
+// pagal buvusį darbuotoją — jokie įrašai neprapuola.
+const LEGACY_EMP_TO_LIFT = { alanas: 'l1', sigitas: 'l3', darius: 'l4' };
+function migrateEvents() {
+  return withDb(db => {
+    db.events.forEach(ev => {
+      if (!ev.lift) {
+        ev.lift = LEGACY_EMP_TO_LIFT[ev.emp] || 'l1';
+      }
+      delete ev.emp;
+    });
+  });
+}
+
+const ALLOWED_FIELDS = ['lift', 'client', 'car', 'dateFrom', 'dateTo', 'start', 'end', 'desc', 'status'];
 function pickFields(body) {
   const out = {};
   ALLOWED_FIELDS.forEach(k => {
@@ -38,6 +55,13 @@ function getAuthUser(req) {
   const token = cookies.token;
   if (!token) return null;
   return verifyToken(token); // null jei negalioja/pasibaigęs
+}
+
+// user.lifts === null/undefined reiškia "visi keltuvai" (savininkas, priėmėjas).
+// Darbuotojo paskyra mato/tvarko tik jai priskirtus keltuvus.
+function canAccessLift(user, liftId) {
+  if (!user.lifts) return true;
+  return user.lifts.includes(liftId);
 }
 
 function setAuthCookie(res, token) {
@@ -79,12 +103,19 @@ async function handleApi(req, res, pathname, method) {
   if (!user) return sendJson(res, 401, { error: 'Neprisijungta arba sesija baigėsi.' });
 
   if (pathname === '/api/me' && method === 'GET') {
-    return sendJson(res, 200, { user: { username: user.username, displayName: user.displayName, empId: user.empId } });
+    return sendJson(res, 200, { user: {
+      username: user.username,
+      displayName: user.displayName,
+      empId: user.empId,
+      role: user.role || 'employee',
+      lifts: user.lifts !== undefined ? user.lifts : null,
+    } });
   }
 
   if (pathname === '/api/events' && method === 'GET') {
     const db = readDb();
-    return sendJson(res, 200, db.events);
+    const visible = user.lifts ? db.events.filter(e => user.lifts.includes(e.lift)) : db.events;
+    return sendJson(res, 200, visible);
   }
 
   if (pathname === '/api/events' && method === 'POST') {
@@ -93,10 +124,13 @@ async function handleApi(req, res, pathname, method) {
     if (!data.dateTo) data.dateTo = data.dateFrom;
     const errors = validateEvent(data);
     if (errors.length) return sendJson(res, 400, { error: errors.join(' ') });
+    if (!canAccessLift(user, data.lift)) {
+      return sendJson(res, 403, { error: 'Neturite teisės kurti darbų šiam keltuvui.' });
+    }
 
     const ev = {
       id: crypto.randomUUID(),
-      emp: data.emp,
+      lift: data.lift,
       client: data.client || '',
       car: data.car || '',
       dateFrom: data.dateFrom,
@@ -104,6 +138,7 @@ async function handleApi(req, res, pathname, method) {
       start: data.start,
       end: data.end,
       desc: data.desc || '',
+      status: data.status || 'planned',
       createdBy: user.username,
       updatedAt: new Date().toISOString(),
     };
@@ -121,10 +156,12 @@ async function handleApi(req, res, pathname, method) {
     await withDb(db => {
       const idx = db.events.findIndex(e => e.id === id);
       if (idx === -1) { errStatus = 404; errMsg = 'Įrašas nerastas.'; return; }
+      if (!canAccessLift(user, db.events[idx].lift)) { errStatus = 404; errMsg = 'Įrašas nerastas.'; return; }
       const merged = { ...db.events[idx], ...patch };
       if (!merged.dateTo) merged.dateTo = merged.dateFrom;
       const errors = validateEvent(merged);
       if (errors.length) { errStatus = 400; errMsg = errors.join(' '); return; }
+      if (!canAccessLift(user, merged.lift)) { errStatus = 403; errMsg = 'Neturite teisės perkelti darbo į šį keltuvą.'; return; }
       merged.updatedAt = new Date().toISOString();
       merged.updatedBy = user.username;
       db.events[idx] = merged;
@@ -139,9 +176,11 @@ async function handleApi(req, res, pathname, method) {
     const id = decodeURIComponent(eventIdMatch[1]);
     let found = false;
     await withDb(db => {
-      const before = db.events.length;
-      db.events = db.events.filter(e => e.id !== id);
-      found = db.events.length < before;
+      const idx = db.events.findIndex(e => e.id === id);
+      if (idx === -1) return;
+      if (!canAccessLift(user, db.events[idx].lift)) return;
+      db.events.splice(idx, 1);
+      found = true;
     });
     if (!found) return sendJson(res, 404, { error: 'Įrašas nerastas.' });
     res.writeHead(204);
@@ -178,6 +217,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`AutoServisas Kalendorius serveris veikia: http://localhost:${PORT}`);
-});
+migrateEvents()
+  .catch(err => console.error('[MIGRACIJA] Nepavyko pritaikyti keltuvų migracijos:', err))
+  .finally(() => {
+    server.listen(PORT, () => {
+      console.log(`AutoServisas Kalendorius serveris veikia: http://localhost:${PORT}`);
+    });
+  });

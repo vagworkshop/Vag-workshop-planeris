@@ -6,30 +6,48 @@
 <title>Auto Servisas – Kalendorius</title>
 <style>
 :root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --surface2: #222535;
-  --surface3: #2a2d3e;
-  --border: #2e3148;
-  --border2: #3a3f5c;
-  --text: #e8eaf6;
-  --text2: #9fa8c9;
-  --text3: #5c6490;
+  --bg: #15171f;
+  --surface: #1e212d;
+  --surface2: #282c3d;
+  --surface3: #313548;
+  --border: #3a3f57;
+  --border2: #4a4f6c;
+  --text: #f5f6fb;
+  --text2: #c2c9e8;
+  --text3: #9aa2c8;
   --accent: #f97316;
   --accent2: #fb923c;
   --slot-h: 48px;
-  --time-col: 52px;
+  --time-col: 62px;
   --radius: 6px;
   --font: 'Georgia', 'Times New Roman', serif;
   --font-ui: system-ui, -apple-system, sans-serif;
 
   /* Employee colors */
-  --c-alanas: #2563eb;
-  --c-alanas-bg: rgba(37,99,235,.18);
-  --c-sigitas: #16a34a;
-  --c-sigitas-bg: rgba(22,163,74,.18);
-  --c-darius: #9333ea;
-  --c-darius-bg: rgba(147,51,234,.18);
+  --c-alanas: #3b82f6;
+  --c-alanas-bg: rgba(59,130,246,.24);
+  --c-sigitas: #22c55e;
+  --c-sigitas-bg: rgba(34,197,94,.24);
+  --c-darius: #a855f7;
+  --c-darius-bg: rgba(168,85,247,.24);
+}
+
+:root[data-theme="light"] {
+  --bg: #eef0f6;
+  --surface: #ffffff;
+  --surface2: #f3f5fa;
+  --surface3: #e6e9f2;
+  --border: #d6dae8;
+  --border2: #c0c6da;
+  --text: #1b1e2b;
+  --text2: #454b64;
+  --text3: #656b87;
+  --accent: #ea580c;
+  --accent2: #f97316;
+
+  --c-alanas-bg: rgba(59,130,246,.16);
+  --c-sigitas-bg: rgba(34,197,94,.16);
+  --c-darius-bg: rgba(168,85,247,.16);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,7 +56,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 15px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -181,9 +199,10 @@ main {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding: 2px 6px 0 0;
-  font-size: 11px;
-  color: var(--text3);
+  padding: 4px 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
   border-top: 1px solid var(--border);
 }
 .time-label:first-child { border-top: none; }
@@ -233,7 +252,7 @@ main {
   overflow: hidden;
 }
 .day-group-header .day-name {
-  font-size: clamp(9px, 1.5vw, 13px);
+  font-size: clamp(10px, 1.5vw, 14px);
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
@@ -241,7 +260,7 @@ main {
   text-overflow: ellipsis;
 }
 .day-group-header .day-date {
-  font-size: clamp(8px, 1.2vw, 11px);
+  font-size: clamp(9px, 1.2vw, 12px);
   color: var(--text2);
   white-space: nowrap;
   overflow: hidden;
@@ -255,10 +274,10 @@ main {
 .emp-header {
   background: var(--surface2);
   border-right: 1px solid var(--border);
-  padding: 3px 2px;
+  padding: 4px 2px;
   text-align: center;
-  font-size: clamp(8px, 1.2vw, 12px);
-  font-weight: 600;
+  font-size: clamp(9px, 1.2vw, 13px);
+  font-weight: 700;
   color: var(--text2);
   white-space: nowrap;
   overflow: hidden;
@@ -266,9 +285,9 @@ main {
   cursor: default;
   min-width: 0;
 }
-.emp-header.emp-alanas { color: #60a5fa; border-bottom: 2px solid var(--c-alanas); }
-.emp-header.emp-sigitas { color: #4ade80; border-bottom: 2px solid var(--c-sigitas); }
-.emp-header.emp-darius  { color: #c084fc; border-bottom: 2px solid var(--c-darius); }
+.emp-header.emp-alanas { color: #7cb0fb; border-bottom: 2px solid var(--c-alanas); }
+.emp-header.emp-sigitas { color: #6ee0a0; border-bottom: 2px solid var(--c-sigitas); }
+.emp-header.emp-darius  { color: #d3a3fb; border-bottom: 2px solid var(--c-darius); }
 
 /* ── EVENT CARDS ── */
 .event-card {
@@ -308,7 +327,7 @@ main {
 .resize-handle:hover { background: rgba(255,255,255,.18); }
 
 .event-title {
-  font-size: clamp(9px, 1.1vw, 12px);
+  font-size: clamp(10px, 1.1vw, 13px);
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
@@ -316,14 +335,14 @@ main {
   text-overflow: ellipsis;
 }
 .event-time {
-  font-size: clamp(8px, 1vw, 11px);
+  font-size: clamp(9px, 1vw, 12px);
   color: var(--text2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .event-car {
-  font-size: clamp(8px, 1vw, 11px);
+  font-size: clamp(9px, 1vw, 12px);
   color: var(--text3);
   white-space: nowrap;
   overflow: hidden;
@@ -481,7 +500,33 @@ main {
 /* ── DAY VIEW specific ── */
 #col-headers.view-day .day-group-header .day-name { font-size: 15px; }
 #col-headers.view-day .emp-header { font-size: 13px; }
+
+/* ── SETTINGS ── */
+.theme-choice { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.theme-choice.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+#btn-toggle-done.active { background: #4b5563; border-color: #4b5563; color: #fff; }
+
+/* ── UŽDUOTIES BŪSENA (kortelėje) ── */
+.event-card.status-done {
+  background: var(--surface3) !important;
+  border-left-color: var(--border2) !important;
+  opacity: .78;
+}
+.event-card.status-done .event-title,
+.event-card.status-done .event-time,
+.event-card.status-done .event-car { color: var(--text3); }
+.event-card.status-active { box-shadow: 0 0 0 1px #2563eb, 0 2px 6px rgba(0,0,0,.4); }
+.event-card.status-active:hover { box-shadow: 0 0 0 1px #2563eb, 0 4px 12px rgba(0,0,0,.6); }
 </style>
+<script>
+// Pritaikoma prieš atvaizduojant puslapį, kad nemirksėtų neteisinga tema.
+(function() {
+  try {
+    var t = localStorage.getItem('as_kalendorius_theme');
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
@@ -514,6 +559,7 @@ main {
   <button class="btn btn-primary" id="btn-new" style="margin-left:8px">+ Naujas</button>
 
   <div class="user-badge" id="user-badge" style="margin-left:12px"></div>
+  <button class="btn-icon" id="btn-settings" title="Nustatymai">&#9881;</button>
   <button class="btn" id="btn-logout" style="font-size:12px">Atsijungti</button>
 </header>
 
@@ -530,18 +576,35 @@ main {
   </div>
 </main>
 
+<!-- Nustatymų langas -->
+<div class="overlay hidden" id="settings-overlay">
+  <div class="modal" id="settings-modal" style="width:min(360px, 95vw)">
+    <h2>Nustatymai</h2>
+    <div class="form-group" style="margin-bottom:6px">
+      <label>Išvaizda</label>
+      <div style="display:flex; gap:8px; margin-top:6px">
+        <button type="button" class="btn theme-choice" data-theme-choice="dark" style="flex:1">🌙 Tamsus</button>
+        <button type="button" class="btn theme-choice" data-theme-choice="light" style="flex:1">☀️ Šviesus</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-settings-close">Uždaryti</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal -->
 <div class="overlay hidden" id="overlay">
   <div class="modal" id="modal">
     <h2 id="modal-title">Naujas darbas</h2>
+    <div class="form-group" style="margin-bottom:14px">
+      <button type="button" class="btn" id="btn-toggle-done" style="width:100%">✓ Pažymėti baigta</button>
+      <div style="font-size:11px; color:var(--text3); margin-top:4px">Darbas kalendoriuje pats pasižymi vykdomu (▶), kai ateina jo laikas — nereikia paspausti atskirai.</div>
+    </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Darbuotojas</label>
-        <select id="f-emp">
-          <option value="alanas">Alanas</option>
-          <option value="sigitas">Sigitas</option>
-          <option value="darius">Darius</option>
-        </select>
+        <label>Keltuvas</label>
+        <select id="f-lift"><!-- pildoma JS pagal vartotojo teises --></select>
       </div>
       <div class="form-group">
         <label>Klientas</label>
@@ -599,6 +662,19 @@ const EMPLOYEES = [
   { id: 'sigitas', label: 'Sigitas', short: 'S' },
   { id: 'darius',  label: 'Darius',  short: 'D' },
 ];
+// Kalendoriaus stulpeliai — kiekvienas atitinka fizinį keltuvą. Du keltuvai
+// gali priklausyti tam pačiam darbuotojui (spalvai naudojamas empId).
+const LIFTS = [
+  { id: 'l1', num: 1, label: '1 keltuvas', empId: 'alanas' },
+  { id: 'l2', num: 2, label: '2 keltuvas', empId: 'alanas' },
+  { id: 'l3', num: 3, label: '3 keltuvas', empId: 'sigitas' },
+  { id: 'l4', num: 4, label: '4 keltuvas', empId: 'darius' },
+];
+function liftById(id) { return LIFTS.find(l => l.id === id); }
+function empForLift(liftId) {
+  const lift = liftById(liftId);
+  return lift ? EMPLOYEES.find(e => e.id === lift.empId) : null;
+}
 const START_H = 7, END_H = 18;
 const SLOT_COUNT = (END_H - START_H) * 2; // 22 half-hours
 
@@ -612,8 +688,15 @@ let anchorDate = dateOnly(new Date());
 let events = [];
 let dragState = null;
 let editingId = null;
+let modalDone = false;
 let nowLineTimer = null;
 let currentUser = null;
+// Kalendoriuje rodomi keltuvai — pilnos prieigos vartotojams (savininkas,
+// priėmėjas) visi 4, darbuotojui tik jam priskirti (žr. applyUserAccess()).
+let VISIBLE_LIFTS = LIFTS;
+function applyUserAccess(user) {
+  VISIBLE_LIFTS = (user.lifts && user.lifts.length) ? LIFTS.filter(l => user.lifts.includes(l.id)) : LIFTS;
+}
 
 /* ── SERVER API ── */
 async function apiFetch(url, opts) {
@@ -708,11 +791,11 @@ function render() {
 function buildHeaderAndGrid() {
   const dates = getViewDates();
   const numDays = dates.length;
-  const numCols = numDays * EMPLOYEES.length;
+  const numCols = numDays * VISIBLE_LIFTS.length;
   const todayStr = isoDate(dateOnly(new Date()));
 
   // Build CSS grid template
-  // Columns: each employee column gets 1fr
+  // Columns: each lift column gets 1fr
   const colTemplate = Array(numCols).fill('1fr').join(' ');
 
   /* ── HEADER ── */
@@ -728,10 +811,10 @@ function buildHeaderAndGrid() {
     const isToday = iso === todayIso;
     const fh = formatHeaderDate(d, currentView);
 
-    // Day group header (spans 3 employee columns)
+    // Day group header (spans all lift columns for that day)
     const dh = document.createElement('div');
     dh.className = 'day-group-header' + (isToday ? ' today-header' : '');
-    dh.style.gridColumn = (di * 3 + 1) + ' / span 3';
+    dh.style.gridColumn = (di * VISIBLE_LIFTS.length + 1) + ' / span ' + VISIBLE_LIFTS.length;
     dh.style.gridRow = '1';
     const nameEl = document.createElement('div');
     nameEl.className = 'day-name';
@@ -743,15 +826,20 @@ function buildHeaderAndGrid() {
     dh.appendChild(dateEl);
     colHeaders.appendChild(dh);
 
-    // Employee headers
-    EMPLOYEES.forEach((emp, ei) => {
+    // Lift headers
+    VISIBLE_LIFTS.forEach((lift, ei) => {
       const eh = document.createElement('div');
-      eh.className = 'emp-header emp-' + emp.id;
-      eh.style.gridColumn = (di * 3 + ei + 1) + '';
+      eh.className = 'emp-header emp-' + lift.empId;
+      eh.style.gridColumn = (di * VISIBLE_LIFTS.length + ei + 1) + '';
       eh.style.gridRow = '2';
-      eh.title = emp.label;
-      // Show full name in day/3day, short in week
-      eh.textContent = (currentView === 'week') ? emp.short : emp.label;
+      const emp = empForLift(lift.id);
+      eh.title = lift.label + (emp ? ' — ' + emp.label : '');
+      // Show "N keltuvas" full label in day/3day, short "N" + employee initial in week
+      if (currentView === 'week') {
+        eh.textContent = lift.num + '-' + (emp ? emp.short : '');
+      } else {
+        eh.textContent = lift.label + (emp ? ' (' + emp.label + ')' : '');
+      }
       colHeaders.appendChild(eh);
     });
   });
@@ -772,11 +860,11 @@ function buildHeaderAndGrid() {
   calGrid.style.gridTemplateColumns = colTemplate;
 
   dates.forEach((d, di) => {
-    EMPLOYEES.forEach((emp, ei) => {
+    VISIBLE_LIFTS.forEach((lift, ei) => {
       const colDiv = document.createElement('div');
       colDiv.className = 'grid-col' + (ei === 0 && di > 0 ? ' day-sep' : '');
       colDiv.dataset.date = isoDate(d);
-      colDiv.dataset.emp = emp.id;
+      colDiv.dataset.lift = lift.id;
       colDiv.dataset.di = di;
       colDiv.dataset.ei = ei;
 
@@ -794,6 +882,33 @@ function buildHeaderAndGrid() {
 }
 
 /* ── EVENT RENDERING ── */
+// Darbas kalendoriuje automatiškai laikomas "vykdomu" (be jokio rankinio
+// paspaudimo), kai tik ateina jo pradžios laikas tą pačią (šiandienos)
+// dieną — ir kol jis nepažymėtas "Baigta". Vykdomo darbo rodomas pabaigos
+// laikas "seka" dabartinį laiką, jei dirbama ilgiau nei suplanuota — bet
+// tik tos dienos stulpelyje (į kitą dieną automatiškai nepersikelia) ir
+// tik iki darbo dienos pabaigos (18:00). Pažymėjus "Baigta", nustoja augti.
+function timeToHourFloat(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h + m / 60;
+}
+function isEffectivelyActive(ev, colDateStr) {
+  if (ev.status === 'done') return false;
+  const todayStr = isoDate(dateOnly(new Date()));
+  if (colDateStr !== todayStr) return false;
+  const now = new Date();
+  const nowH = now.getHours() + now.getMinutes() / 60;
+  return nowH >= timeToHourFloat(ev.start);
+}
+function computeEffectiveEndSlot(ev, colDateStr) {
+  const baseEnd = timeToSlot(ev.end);
+  if (!isEffectivelyActive(ev, colDateStr)) return baseEnd;
+  const now = new Date();
+  const nowH = now.getHours() + now.getMinutes() / 60;
+  const nowSlotFloat = (Math.min(nowH, END_H) - START_H) * 2;
+  return Math.max(baseEnd, nowSlotFloat);
+}
+
 function renderEvents() {
   // Remove old cards
   document.querySelectorAll('.event-card, .drag-preview').forEach(e => e.remove());
@@ -802,8 +917,8 @@ function renderEvents() {
   const dateStrs = dates.map(d => isoDate(d));
 
   // For each column, collect events that appear there
-  // key: "date|emp"
-  const colEventsMap = {}; // "date|emp" -> [{ev, slotStart, slotEnd}]
+  // key: "date|lift"
+  const colEventsMap = {}; // "date|lift" -> [{ev, slotStart, slotEnd}]
 
   events.forEach(ev => {
     // Find all dates in range that are in view
@@ -812,10 +927,10 @@ function renderEvents() {
     dates.forEach(d => {
       if (d >= from && d <= to) {
         const ds = isoDate(d);
-        const key = ds + '|' + ev.emp;
+        const key = ds + '|' + ev.lift;
         if (!colEventsMap[key]) colEventsMap[key] = [];
         const ss = timeToSlot(ev.start);
-        const se = timeToSlot(ev.end);
+        const se = computeEffectiveEndSlot(ev, ds);
         colEventsMap[key].push({ ev, slotStart: ss, slotEnd: se });
       }
     });
@@ -826,8 +941,8 @@ function renderEvents() {
 
   cols.forEach(colDiv => {
     const dateStr = colDiv.dataset.date;
-    const empId = colDiv.dataset.emp;
-    const key = dateStr + '|' + empId;
+    const liftId = colDiv.dataset.lift;
+    const key = dateStr + '|' + liftId;
     const colEvents = colEventsMap[key] || [];
     if (colEvents.length === 0) return;
 
@@ -889,7 +1004,11 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   const height = Math.max((slotEnd - slotStart) * slotH - 2, slotH * 0.5);
 
   const card = document.createElement('div');
-  card.className = 'event-card emp-' + ev.emp;
+  const lift = liftById(ev.lift);
+  const colDateStr = colDiv.dataset.date;
+  const active = isEffectivelyActive(ev, colDateStr);
+  const statusCls = (ev.status === 'done') ? ' status-done' : (active ? ' status-active' : '');
+  card.className = 'event-card emp-' + (lift ? lift.empId : '') + statusCls;
   card.dataset.id = ev.id;
 
   // Position: absolute within colDiv
@@ -909,7 +1028,8 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   const titleEl = document.createElement('div');
   titleEl.className = 'event-title';
   const clientText = escHtml(ev.client || '');
-  titleEl.textContent = clientText + (multiDay ? ' [kd]' : '');
+  const statusIcon = (ev.status === 'done') ? '✓ ' : (active ? '▶ ' : '');
+  titleEl.textContent = statusIcon + clientText + (multiDay ? ' [kd]' : '');
 
   const timeEl = document.createElement('div');
   timeEl.className = 'event-time';
@@ -947,6 +1067,14 @@ function escHtml(s) {
 
 /* ── NOW LINE ── */
 function updateNowLine() {
+  // Aktyvių (status: "active") darbų juostelės kalendoriuje pačios ilgėja
+  // kartu su laiku (kol nepažymėtos kaip baigtos), tad kiekvieną kartą
+  // atnaujinant "dabar" liniją, perpiešiame ir korteles, kad jos "paseks"
+  // esamą laiką. Nepertraukiam, jei vartotojas kažką šiuo metu vilkia/redaguoja.
+  if (typeof isUserBusy === 'function' && !isUserBusy()) {
+    renderEvents();
+  }
+
   document.querySelectorAll('.now-line').forEach(e => e.remove());
   const now = new Date();
   const todayStr = isoDate(dateOnly(now));
@@ -989,7 +1117,7 @@ function onSlotMousedown(e) {
   const onMove = (ev) => {
     const y = (ev.touches ? ev.touches[0].clientY : ev.clientY);
     const rect = colDiv.getBoundingClientRect();
-    const relY = y - rect.top + colDiv.closest('#cal-body').scrollTop;
+    const relY = y - rect.top;
     const s = Math.max(0, Math.min(SLOT_COUNT - 1, Math.floor(relY / 48)));
     if (s !== dragEndSlot) { dragEndSlot = s; updateDragPreview(); }
   };
@@ -1000,7 +1128,7 @@ function onSlotMousedown(e) {
     if (dragStartSlot !== null && dragEndSlot !== null && dragColDiv) {
       const s = Math.min(dragStartSlot, dragEndSlot);
       const e2 = Math.max(dragStartSlot, dragEndSlot) + 1;
-      openNewModal(dragColDiv.dataset.date, dragColDiv.dataset.emp, slotToTime(s), slotToTime(Math.min(e2, SLOT_COUNT)));
+      openNewModal(dragColDiv.dataset.date, dragColDiv.dataset.lift, slotToTime(s), slotToTime(Math.min(e2, SLOT_COUNT)));
     }
     dragStartSlot = dragEndSlot = dragColDiv = dragPreviewEl = null;
   };
@@ -1024,7 +1152,7 @@ function onSlotClick(e) {
   const slot = parseInt(e.currentTarget.dataset.slot);
   const colDiv = e.currentTarget.closest('.grid-col');
   const endSlot = Math.min(slot + 1, SLOT_COUNT);
-  openNewModal(colDiv.dataset.date, colDiv.dataset.emp, slotToTime(slot), slotToTime(endSlot));
+  openNewModal(colDiv.dataset.date, colDiv.dataset.lift, slotToTime(slot), slotToTime(endSlot));
 }
 
 /* ── MOVE / RESIZE EXISTING EVENTS ── */
@@ -1046,9 +1174,8 @@ function onCardMousedown(e, ev) {
   e.preventDefault();
   e.stopPropagation();
   const colDiv = e.currentTarget.closest('.grid-col');
-  const calBody = document.getElementById('cal-body');
   const rect = colDiv.getBoundingClientRect();
-  const relY = e.clientY - rect.top + calBody.scrollTop;
+  const relY = e.clientY - rect.top;
   const grabSlot = Math.floor(relY / 48);
   const slotStart0 = timeToSlot(ev.start);
   const slotEnd0 = timeToSlot(ev.end);
@@ -1066,7 +1193,7 @@ function onCardMousedown(e, ev) {
     origDateFrom: ev.dateFrom,
     origDateTo: ev.dateTo || ev.dateFrom,
     grabDateIso: colDiv.dataset.date,
-    curEmp: ev.emp,
+    curLift: ev.lift,
     curDateFrom: ev.dateFrom,
     curDateTo: ev.dateTo || ev.dateFrom,
     curSlotStart: slotStart0,
@@ -1096,7 +1223,7 @@ function onResizeMousedown(e, ev, edge) {
     lastClientY: e.clientY,
     moved: false,
     colDiv,
-    curEmp: ev.emp,
+    curLift: ev.lift,
     curDateFrom: ev.dateFrom,
     curDateTo: ev.dateTo || ev.dateFrom,
     curSlotStart: slotStart0,
@@ -1132,19 +1259,18 @@ function updateMoveDrag(x, y) {
   const cy = Math.min(Math.max(y, gridRect.top + 1), gridRect.top + gridRect.height - 1);
   const colDiv = colUnderPoint(cx, cy);
   if (!colDiv) return; // keep last valid position
-  const calBody = document.getElementById('cal-body');
   const rect = colDiv.getBoundingClientRect();
-  const relY = y - rect.top + calBody.scrollTop;
+  const relY = y - rect.top;
   const rawSlot = Math.floor(relY / 48);
   let slotStart = rawSlot - evDrag.grabOffsetSlots;
   slotStart = Math.max(0, Math.min(SLOT_COUNT - evDrag.duration, slotStart));
   const slotEnd = slotStart + evDrag.duration;
 
   const newDateIso = colDiv.dataset.date;
-  const newEmp = colDiv.dataset.emp;
+  const newLift = colDiv.dataset.lift;
   const dayDelta = Math.round((parseIso(newDateIso) - parseIso(evDrag.grabDateIso)) / 86400000);
 
-  evDrag.curEmp = newEmp;
+  evDrag.curLift = newLift;
   evDrag.curDateFrom = isoDate(addDays(parseIso(evDrag.origDateFrom), dayDelta));
   evDrag.curDateTo = isoDate(addDays(parseIso(evDrag.origDateTo), dayDelta));
   evDrag.curSlotStart = slotStart;
@@ -1154,9 +1280,8 @@ function updateMoveDrag(x, y) {
 
 function updateResizeDrag(y) {
   const colDiv = evDrag.colDiv;
-  const calBody = document.getElementById('cal-body');
   const rect = colDiv.getBoundingClientRect();
-  const relY = y - rect.top + calBody.scrollTop;
+  const relY = y - rect.top;
   const rawSlot = Math.round(relY / 48);
   if (evDrag.mode === 'resize-top') {
     evDrag.curSlotStart = Math.max(0, Math.min(evDrag.curSlotEnd - 1, rawSlot));
@@ -1179,8 +1304,10 @@ function renderGhost() {
   const label = document.createElement('div');
   label.className = 'ghost-label';
   if (evDrag.mode === 'move') {
-    const empObj = EMPLOYEES.find(x => x.id === evDrag.curEmp);
-    label.textContent = (empObj ? empObj.label : '') + ' • ' + formatShortDate(parseIso(colDiv.dataset.date)) + ' ' + slotToTime(evDrag.curSlotStart) + '–' + slotToTime(evDrag.curSlotEnd);
+    const liftObj = liftById(evDrag.curLift);
+    const empObj = liftObj ? EMPLOYEES.find(x => x.id === liftObj.empId) : null;
+    const liftLabel = liftObj ? liftObj.label + (empObj ? ' (' + empObj.label + ')' : '') : '';
+    label.textContent = liftLabel + ' • ' + formatShortDate(parseIso(colDiv.dataset.date)) + ' ' + slotToTime(evDrag.curSlotStart) + '–' + slotToTime(evDrag.curSlotEnd);
   } else {
     label.textContent = slotToTime(evDrag.curSlotStart) + '–' + slotToTime(evDrag.curSlotEnd);
   }
@@ -1238,7 +1365,7 @@ function onDragEnd(e) {
     end: slotToTime(evDrag.curSlotEnd),
   };
   if (mode === 'move') {
-    patch.emp = evDrag.curEmp;
+    patch.lift = evDrag.curLift;
     patch.dateFrom = evDrag.curDateFrom;
     patch.dateTo = evDrag.curDateTo;
   }
@@ -1263,11 +1390,70 @@ function onDragEnd(e) {
 }
 
 /* ── MODAL ── */
-function openNewModal(dateStr, empId, startT, endT) {
+function populateLiftSelect() {
+  const sel = document.getElementById('f-lift');
+  sel.innerHTML = '';
+  VISIBLE_LIFTS.forEach(lift => {
+    const emp = empForLift(lift.id);
+    const opt = document.createElement('option');
+    opt.value = lift.id;
+    opt.textContent = lift.label + (emp ? ' (' + emp.label + ')' : '');
+    sel.appendChild(opt);
+  });
+}
+
+function setModalDoneUI(done) {
+  modalDone = done;
+  const btn = document.getElementById('btn-toggle-done');
+  btn.textContent = done ? '↺ Grąžinti (atšaukti „baigta")' : '✓ Pažymėti baigta';
+  btn.classList.toggle('active', done);
+}
+
+function eventCoversDate(ev, dateStr) {
+  return ev.dateFrom <= dateStr && (ev.dateTo || ev.dateFrom) >= dateStr;
+}
+
+// Paspaudus "Pažymėti baigta"/"Grąžinti" jau egzistuojančiam (redaguojamam)
+// darbui — iškart išsaugoma serveryje, nereikia dar spausti "Išsaugoti".
+// Kuriant naują darbą (dar neturintį id) — tik pažymima formoje, išsaugoma
+// kartu su kitais laukais paspaudus "Išsaugoti".
+async function toggleModalDone() {
+  const newDone = !modalDone;
+  setModalDoneUI(newDone);
+  if (!editingId) return;
+  try {
+    const patch = { status: newDone ? 'done' : 'planned' };
+    // Pažymint "Baigta" darbą, kuris tuo metu buvo laikomas vykdomu (jau
+    // prasidėjęs šiandien) ir spėjo pasiilginti už suplanuoto laiko —
+    // užfiksuojame realų pabaigos laiką, kad kortelė nesusitrauktų atgal.
+    if (newDone) {
+      const ev = events.find(e => e.id === editingId);
+      const todayStr = isoDate(dateOnly(new Date()));
+      if (ev && eventCoversDate(ev, todayStr) && isEffectivelyActive(ev, todayStr)) {
+        const now = new Date();
+        const cappedH = Math.min(now.getHours() + now.getMinutes() / 60, END_H);
+        const nowTime = String(Math.floor(cappedH)).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const cappedTime = (cappedH >= END_H) ? slotToTime(SLOT_COUNT) : nowTime;
+        if (cappedTime > ev.end) patch.end = cappedTime;
+      }
+    }
+    const updated = await apiFetch('/api/events/' + editingId, { method: 'PUT', body: JSON.stringify(patch) });
+    const idx = events.findIndex(e => e.id === editingId);
+    if (idx !== -1) events[idx] = updated;
+    document.getElementById('f-end').value = updated.end;
+    render();
+  } catch (err) {
+    showErr('Nepavyko išsaugoti būsenos: ' + err.message);
+  }
+}
+
+document.getElementById('btn-toggle-done').addEventListener('click', toggleModalDone);
+
+function openNewModal(dateStr, liftId, startT, endT) {
   editingId = null;
   document.getElementById('modal-title').textContent = 'Naujas darbas';
   document.getElementById('btn-delete').style.display = 'none';
-  document.getElementById('f-emp').value = empId;
+  document.getElementById('f-lift').value = liftId;
   document.getElementById('f-client').value = '';
   document.getElementById('f-car').value = '';
   document.getElementById('f-date-from').value = dateStr;
@@ -1276,6 +1462,7 @@ function openNewModal(dateStr, empId, startT, endT) {
   document.getElementById('f-end').value = endT;
   document.getElementById('f-desc').value = '';
   document.getElementById('f-error').style.display = 'none';
+  setModalDoneUI(false);
   document.getElementById('overlay').classList.remove('hidden');
   document.getElementById('f-client').focus();
 }
@@ -1286,7 +1473,7 @@ function openEditModal(id) {
   editingId = id;
   document.getElementById('modal-title').textContent = 'Redaguoti darbą';
   document.getElementById('btn-delete').style.display = '';
-  document.getElementById('f-emp').value = ev.emp;
+  document.getElementById('f-lift').value = ev.lift;
   document.getElementById('f-client').value = ev.client || '';
   document.getElementById('f-car').value = ev.car || '';
   document.getElementById('f-date-from').value = ev.dateFrom;
@@ -1295,6 +1482,7 @@ function openEditModal(id) {
   document.getElementById('f-end').value = ev.end;
   document.getElementById('f-desc').value = ev.desc || '';
   document.getElementById('f-error').style.display = 'none';
+  setModalDoneUI(ev.status === 'done');
   document.getElementById('overlay').classList.remove('hidden');
 }
 
@@ -1304,7 +1492,7 @@ function closeModal() {
 }
 
 async function saveModal() {
-  const emp = document.getElementById('f-emp').value;
+  const lift = document.getElementById('f-lift').value;
   const client = document.getElementById('f-client').value.trim();
   const car = document.getElementById('f-car').value.trim();
   const dateFrom = document.getElementById('f-date-from').value;
@@ -1322,7 +1510,7 @@ async function saveModal() {
   if (dateTo < dateFrom) { showErr('Data „iki" negali būti ankstesnė nei data „nuo".'); return; }
   errEl.style.display = 'none';
 
-  const evData = { emp, client, car, dateFrom, dateTo, start, end, desc };
+  const evData = { lift, client, car, dateFrom, dateTo, start, end, desc, status: modalDone ? 'done' : 'planned' };
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
   try {
@@ -1369,7 +1557,7 @@ document.getElementById('btn-next').addEventListener('click', () => navigate(1))
 document.getElementById('btn-today').addEventListener('click', () => { anchorDate = dateOnly(new Date()); render(); });
 document.getElementById('btn-new').addEventListener('click', () => {
   const dates = getViewDates();
-  openNewModal(isoDate(dates[0]), 'alanas', '07:00', '07:30');
+  openNewModal(isoDate(dates[0]), VISIBLE_LIFTS[0].id, '07:00', '07:30');
 });
 
 document.querySelectorAll('[data-view]').forEach(btn => {
@@ -1388,18 +1576,97 @@ document.getElementById('overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('overlay')) closeModal();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') {
+    closeModal();
+    document.getElementById('settings-overlay').classList.add('hidden');
+  }
 });
 document.getElementById('btn-logout').addEventListener('click', async () => {
   try { await apiFetch('/api/logout', { method: 'POST' }); } catch (e) {}
   window.location.href = '/login.html';
 });
 
+/* ── NUSTATYMAI / TEMA ── */
+const THEME_KEY = 'as_kalendorius_theme';
+function getTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; }
+}
+function setTheme(t) {
+  const theme = (t === 'light') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  document.querySelectorAll('.theme-choice').forEach(b => {
+    b.classList.toggle('active', b.dataset.themeChoice === theme);
+  });
+}
+document.querySelectorAll('.theme-choice').forEach(b => {
+  b.addEventListener('click', () => setTheme(b.dataset.themeChoice));
+});
+document.getElementById('btn-settings').addEventListener('click', () => {
+  document.getElementById('settings-overlay').classList.remove('hidden');
+});
+document.getElementById('btn-settings-close').addEventListener('click', () => {
+  document.getElementById('settings-overlay').classList.add('hidden');
+});
+document.getElementById('settings-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-overlay')) {
+    document.getElementById('settings-overlay').classList.add('hidden');
+  }
+});
+setTheme(getTheme());
+
+/* ── AUTOMATINIS ATNAUJINIMAS (sinchronizacija tarp įrenginių) ── */
+// Kad pakeitimas, padarytas viename įrenginyje (pvz. kompiuteryje), pasirodytų
+// ir kituose (pvz. telefone) be rankinio puslapio perkrovimo, kalendorius
+// periodiškai (kas kelias sekundes) tyliai patikrina serverį ir, jei kas nors
+// pasikeitė, atnaujina vaizdą. Papildomai iškart patikrina, kai grįžtama į
+// šį skirtuką/langą (pvz. atsidarius telefono naršyklę iš fono).
+const POLL_INTERVAL_MS = 6000;
+let pollTimer = null;
+let pollInFlight = false;
+
+function isUserBusy() {
+  // Nepertraukiam, kol vartotojas kažką vilkia arba turi atidarytą langą.
+  if (evDrag) return true;
+  if (dragStartSlot !== null) return true;
+  if (!document.getElementById('overlay').classList.contains('hidden')) return true;
+  if (!document.getElementById('settings-overlay').classList.contains('hidden')) return true;
+  return false;
+}
+
+async function pollEvents() {
+  if (pollInFlight || document.hidden || isUserBusy() || !currentUser) return;
+  pollInFlight = true;
+  try {
+    const fresh = await apiFetch('/api/events');
+    if (JSON.stringify(fresh) !== JSON.stringify(events)) {
+      events = fresh;
+      render();
+    }
+  } catch (e) {
+    // Tylu — kitas ciklas pabandys vėl. (401 atveju apiFetch jau nukreipia į /login.html.)
+  } finally {
+    pollInFlight = false;
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollEvents, POLL_INTERVAL_MS);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pollEvents();
+});
+window.addEventListener('focus', () => pollEvents());
+
 /* ── START ── */
 (async function init() {
   try {
     const me = await apiFetch('/api/me');
     currentUser = me.user;
+    applyUserAccess(currentUser);
+    populateLiftSelect();
     document.getElementById('user-badge').innerHTML = 'Prisijungęs: <b>' + escHtml(currentUser.displayName) + '</b>';
   } catch (e) {
     return; // apiFetch jau nukreipė į /login.html
@@ -1414,6 +1681,7 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
   }
 
   render();
+  startPolling();
 
   // Scroll to 7:00 area (a bit)
   setTimeout(() => {
