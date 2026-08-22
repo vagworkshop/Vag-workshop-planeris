@@ -726,11 +726,11 @@ main {
     <div class="form-row">
       <div class="form-group">
         <label>Pradžia</label>
-        <input type="time" id="f-start" min="05:00" max="18:00" step="1800">
+        <select id="f-start"><!-- pildoma JS, žr. populateTimeSelects() --></select>
       </div>
       <div class="form-group">
         <label>Pabaiga</label>
-        <input type="time" id="f-end" min="05:00" max="18:00" step="1800">
+        <select id="f-end"><!-- pildoma JS, žr. populateTimeSelects() --></select>
       </div>
     </div>
     <div class="form-row full">
@@ -855,6 +855,26 @@ function slotToTime(s) {
   return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
 }
 function timeStr(t) { return t; }
+
+// Užpildo "Pradžia"/"Pabaiga" pasirinkimo sąrašus visomis galimomis
+// pusvalandinėmis reikšmėmis (05:00, 05:30, ..., 18:00) — visada 24 val.
+// formatu (nesinaudojame naršyklės <input type="time">, nes ji kai kuriose
+// sistemose rodo AM/PM). Reikšmių žingsnis atitinka kalendoriaus tinklelio
+// pusvalandinius langelius.
+function populateTimeSelects() {
+  const opts = [];
+  for (let s = 0; s <= SLOT_COUNT; s++) opts.push(slotToTime(s));
+  ['f-start', 'f-end'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    opts.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      sel.appendChild(opt);
+    });
+  });
+}
 
 /* ── VIEW DATES ── */
 function getViewDates() {
@@ -1236,6 +1256,12 @@ function updateNowLine() {
 
 /* ── DRAG TO CREATE ── */
 let dragStartSlot = null, dragEndSlot = null, dragColDiv = null, dragPreviewEl = null;
+// Kiek pikselių nuo viršutinio/apatinio matomos srities (#cal-body) krašto
+// pradedame automatiškai slinkti, ir kiek pikselių slenkame kas "tiksą" —
+// kad žymint valandas driekiant žemyn (ar aukštyn) už matomos srities ribų,
+// puslapis pats pasislinktų ir būtų galima pažymėti iki pat 18:00.
+const DRAG_SCROLL_EDGE_PX = 50;
+const DRAG_SCROLL_STEP = 16;
 
 function onSlotMousedown(e) {
   if (READ_ONLY) return;
@@ -1251,16 +1277,36 @@ function onSlotMousedown(e) {
   updateDragPreview();
   colDiv.appendChild(dragPreviewEl);
 
-  const onMove = (ev) => {
-    const y = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+  let lastY = (e.touches ? e.touches[0].clientY : e.clientY);
+
+  const applyY = (y) => {
     const rect = colDiv.getBoundingClientRect();
     const relY = y - rect.top;
     const s = Math.max(0, Math.min(SLOT_COUNT - 1, Math.floor(relY / 48)));
     if (s !== dragEndSlot) { dragEndSlot = s; updateDragPreview(); }
   };
+
+  const onMove = (ev) => {
+    lastY = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+    applyY(lastY);
+  };
+
+  const calBody = document.getElementById('cal-body');
+  const scrollInterval = setInterval(() => {
+    const bodyRect = calBody.getBoundingClientRect();
+    let dir = 0;
+    if (lastY > bodyRect.bottom - DRAG_SCROLL_EDGE_PX) dir = 1;
+    else if (lastY < bodyRect.top + DRAG_SCROLL_EDGE_PX) dir = -1;
+    if (dir === 0) return;
+    const prevScrollTop = calBody.scrollTop;
+    calBody.scrollTop += dir * DRAG_SCROLL_STEP;
+    if (calBody.scrollTop !== prevScrollTop) applyY(lastY);
+  }, 40);
+
   const onUp = () => {
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
+    clearInterval(scrollInterval);
     if (dragPreviewEl) dragPreviewEl.remove();
     if (dragStartSlot !== null && dragEndSlot !== null && dragColDiv) {
       const s = Math.min(dragStartSlot, dragEndSlot);
@@ -1893,6 +1939,7 @@ window.addEventListener('focus', () => pollEvents());
 
 /* ── START ── */
 (async function init() {
+  populateTimeSelects();
   try {
     const me = await apiFetch('/api/me');
     currentUser = me.user;
