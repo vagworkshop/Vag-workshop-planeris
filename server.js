@@ -39,15 +39,59 @@ function migrateEvents() {
   });
 }
 
-const ALLOWED_FIELDS = ['lift', 'client', 'car', 'dateFrom', 'dateTo', 'start', 'end', 'desc', 'status'];
+const ALLOWED_FIELDS = ['lift', 'client', 'car', 'plate', 'phone', 'dateFrom', 'dateTo', 'start', 'end', 'desc', 'status', 'parts', 'workItems', 'partsDraft', 'notes'];
+// Darbe naudojami meistrai — "kas atliko darbą" laukas gali nurodyti bet
+// kurį iš jų, nepriklausomai nuo to, kuriam keltuvui/meistrui darbas
+// priskirtas pagal numatytuosius nustatymus (žr. index.html empForLift()).
+const MECHANIC_IDS = ['alanas', 'sigitas', 'darius'];
+
+// Dalys ir atlikti darbai — masyvai, saugomi kartu su darbo įrašu. Kiekvienas
+// elementas griežtai apkarpomas iki žinomų laukų ir saugaus ilgio, kad
+// klientas negalėtų įkišti savavalių papildomų laukų ar per didelių įrašų.
+function sanitizeParts(arr) {
+  if (!Array.isArray(arr)) return [];
+  const s = v => (typeof v === 'string' ? v.trim().slice(0, 200) : '');
+  return arr.slice(0, 300).map(p => ({
+    id: (typeof p.id === 'string' && p.id) ? p.id.slice(0, 100) : crypto.randomUUID(),
+    name: s(p.name),
+    qty: s(p.qty).slice(0, 20),
+    code: s(p.code).slice(0, 100),
+    oeCode: s(p.oeCode).slice(0, 100),
+    eta: s(p.eta).slice(0, 20),
+    supplier: s(p.supplier),
+    price: s(p.price).slice(0, 20),
+    ordered: p.ordered === 'yes' ? 'yes' : 'no',
+  })).filter(p => p.name || p.code || p.oeCode);
+}
+function sanitizeWorkItems(arr) {
+  if (!Array.isArray(arr)) return [];
+  const s = v => (typeof v === 'string' ? v.trim().slice(0, 500) : '');
+  return arr.slice(0, 300).map(w => ({
+    id: (typeof w.id === 'string' && w.id) ? w.id.slice(0, 100) : crypto.randomUUID(),
+    desc: s(w.desc),
+    price: (typeof w.price === 'string' || typeof w.price === 'number') ? String(w.price).trim().slice(0, 20) : '',
+    performedBy: MECHANIC_IDS.includes(w.performedBy) ? w.performedBy : '',
+    date: (typeof w.date === 'string' ? w.date.trim().slice(0, 20) : ''),
+  })).filter(w => w.desc);
+}
 function pickFields(body) {
   const out = {};
   ALLOWED_FIELDS.forEach(k => {
     if (body[k] !== undefined && body[k] !== null) {
-      out[k] = typeof body[k] === 'string' ? body[k] : String(body[k]);
+      if (k === 'parts' || k === 'workItems' || k === 'partsDraft') {
+        out[k] = body[k];
+      } else {
+        out[k] = typeof body[k] === 'string' ? body[k] : String(body[k]);
+      }
     }
   });
-  ['client', 'car', 'desc'].forEach(k => { if (typeof out[k] === 'string') out[k] = out[k].trim(); });
+  ['client', 'car', 'plate', 'phone', 'desc', 'notes'].forEach(k => { if (typeof out[k] === 'string') out[k] = out[k].trim(); });
+  if (typeof out.notes === 'string') out.notes = out.notes.slice(0, 5000);
+  if (out.parts !== undefined) out.parts = sanitizeParts(out.parts);
+  if (out.workItems !== undefined) out.workItems = sanitizeWorkItems(out.workItems);
+  // Juodraštis naudoja tą pačią lauko formą kaip ir dalys (pvz. galimybė
+  // perkelti eilutę tarp abiejų sąrašų klientui iš karto veikiant).
+  if (out.partsDraft !== undefined) out.partsDraft = sanitizeParts(out.partsDraft);
   return out;
 }
 
@@ -166,11 +210,17 @@ async function handleApi(req, res, pathname, method) {
       lift: data.lift,
       client: data.client || '',
       car: data.car || '',
+      plate: data.plate || '',
+      phone: data.phone || '',
+      parts: data.parts || [],
+      workItems: data.workItems || [],
+      partsDraft: data.partsDraft || [],
       dateFrom: data.dateFrom,
       dateTo: data.dateTo,
       start: data.start,
       end: data.end,
       desc: data.desc || '',
+      notes: data.notes || '',
       status: data.status || 'planned',
       createdBy: user.username,
       updatedAt: new Date().toISOString(),
