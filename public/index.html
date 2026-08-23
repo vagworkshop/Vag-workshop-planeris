@@ -197,6 +197,13 @@ main {
 #time-labels {
   width: var(--time-col);
   flex-shrink: 0;
+  /* align-self:flex-start — TIKRASIS dingstančių linijų sprendimas:
+     #cal-body yra flex konteineris su numatytu align-items:stretch, todėl
+     #time-labels būdavo ištemptas iki matomo #cal-body aukščio, o jo
+     turinys (persiliejantis už dėžės ribų) piešdavo kraštinę tik iki
+     ištemptos dėžės krašto, ne iki realaus turinio pabaigos. Šis stulpelis
+     dabar pats nustato savo aukštį pagal turinį. */
+  align-self: flex-start;
   border-right: 1px solid var(--border);
   position: relative;
 }
@@ -234,9 +241,12 @@ main {
   display: grid;
   /* columns set by JS */
   min-width: 0;
+  /* žr. paaiškinimą prie #time-labels — tas pats align-self čia dėl
+     nuoseklumo/patikimumo visose naršyklėse, nors CSS grid turinys šiaip
+     jau priverstinai palaiko pilną aukštį. */
+  align-self: flex-start;
 }
 
-/* Each column cell */
 .grid-col {
   position: relative;
   border-right: 1px solid var(--border);
