@@ -4118,7 +4118,7 @@ async function saveModal() {
 
   if (!dateFrom) { showErr('Pasirinkite datą.'); return; }
   if (!start || !end) { showErr('Įveskite laiką.'); return; }
-  if (end <= start) { showErr('Pabaiga turi būti vėlesnė už pradžią.'); return; }
+  if (dateTo === dateFrom && end <= start) { showErr('Pabaiga turi būti vėlesnė už pradžią.'); return; }
   if (end > '18:00') { showErr('Pabaiga negali būti vėlesnė nei 18:00.'); return; }
   if (start < '05:00') { showErr('Pradžia negali būti anksčiau nei 05:00.'); return; }
   if (dateTo < dateFrom) { showErr('Data „iki" negali būti ankstesnė nei data „nuo".'); return; }
