@@ -195,7 +195,7 @@ header .spacer { flex: 1; }
   .page-tabs-note { display: none; }
   .page-tabs { overflow-x: auto; }
 }
-/* Siaurame (telefono) ekrane visi 4 skirtukai sutalpinami vienoje eilutėje
+/* Siaurame (telefono) ekrane visi 3 skirtukai sutalpinami vienoje eilutėje
    be šoninio slinkimo — firminis pavadinimas pasitraukia, skirtukai dalinasi
    plotį lygiomis dalimis, o "Darbų valdymas" tampa "Darbai", kad tilptų. */
 @media (max-width: 560px) {
@@ -400,6 +400,15 @@ main {
 .detail-del-btn:hover { background: rgba(161,61,61,.2); color: #e17b7b; }
 .detail-btn-row { display: flex; align-items: center; gap: 10px; }
 .detail-btn-row .btn { font-size: 12px; padding: 5px 10px; }
+.apply-template-select {
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  max-width: 220px;
+}
 .detail-save-status { font-size: 12px; font-weight: 600; }
 .detail-computed-cell {
   padding: 5px 7px;
@@ -692,6 +701,11 @@ main {
   z-index: 2;
   box-shadow: 0 2px 6px rgba(0,0,0,.4);
   user-select: none;
+  /* Neleisti iOS Safari ilgo prispaudimo metu iššokti teksto pasirinkimo /
+     "Copy, Look Up..." meniu — tas pats prispaudimas mūsų programoje jau
+     turi savo prasmę (vilkimo aktyvavimas), žr. attachLongPress. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
 }
 .event-card:hover {
   opacity: .88;
@@ -713,10 +727,18 @@ main {
   height: 7px;
   cursor: ns-resize;
   z-index: 6;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .resize-handle.resize-top { top: 0; }
 .resize-handle.resize-bottom { bottom: 0; }
 .resize-handle:hover { background: rgba(255,255,255,.18); }
+/* Pirštu 7px juostelę paspausti sunku — jutikliniuose (touch) įrenginiuose
+   palietimo sritį padidiname (kortelės viduje, kad netrukdytų overflow:hidden). */
+@media (pointer: coarse) {
+  .resize-handle { height: 16px; }
+}
 
 .event-title {
   font-size: clamp(10px, 1.1vw, 13px);
@@ -735,10 +757,32 @@ main {
 }
 .event-car {
   font-size: clamp(9px, 1vw, 12px);
-  color: var(--text3);
-  white-space: nowrap;
+  color: var(--text2);
+  /* Siaurose (persidengiančiose) kortelėse tekstas nebetelpa vienoje
+     eilutėje — leidžiama persikelti į 2 eilutes (o ne dingti nupjautam po
+     vienu žodžiu), kad valst. nr. netrūktų vietos ir liktų matomas. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  word-break: break-word;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+.event-plate {
+  font-weight: 700;
+  color: var(--text);
+}
+.event-desc {
+  font-size: clamp(9px, 1vw, 11px);
+  color: var(--text2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  word-break: break-word;
+  overflow: hidden;
+  margin-top: 1px;
+  opacity: .9;
 }
 
 /* Drag preview */
@@ -763,6 +807,14 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: calc(100% - 6px);
+}
+.drag-preview .ghost-label-car {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--accent);
+  color: #1a1200;
+  margin-bottom: 0;
 }
 
 /* Now line */
@@ -792,6 +844,35 @@ main {
   z-index: 100;
 }
 .overlay.hidden { display: none; }
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #1f2430;
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  z-index: 200;
+  font-size: 14px;
+}
+.undo-toast.hidden { display: none; }
+.undo-toast #undo-toast-btn {
+  background: var(--accent);
+  color: #1a1200;
+  border: none;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.undo-toast #undo-toast-btn:hover { opacity: .88; }
 .modal {
   background: var(--surface);
   border: 1px solid var(--border2);
@@ -881,6 +962,89 @@ main {
   display: none;
 }
 
+/* ── AUTOMOBILIO LANGAS: nuotrauka, remonto istorija ── */
+.vehicle-photo-row { display: flex; align-items: center; gap: 14px; }
+.vehicle-photo-preview {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+}
+.vehicle-photo-preview.hidden { display: none; }
+.vehicle-photo-controls { display: flex; flex-direction: column; gap: 6px; }
+.vehicle-photo-controls input[type="file"] { font-size: 12px; color: var(--text2); }
+.vehicle-history {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.vehicle-history h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text2);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+#vehicle-history-table tbody tr { cursor: pointer; }
+#vehicle-history-table tbody tr:hover { background: rgba(249,115,22,.08); }
+.vehicle-table-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 5px;
+  vertical-align: middle;
+}
+.jobs-archive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.jobs-archive-toggle input { cursor: pointer; }
+.modal-job-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.modal-job-toggle input { cursor: pointer; margin-top: 2px; }
+.modal-job-toggle .modal-job-toggle-hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.row-select {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.row-select.is-good { color: #4ade80; border-color: rgba(74,222,128,.4); }
+.row-select.is-bad { color: #e17b7b; border-color: rgba(161,61,61,.4); }
+.archive-btn {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.archive-btn:hover { background: var(--border2); color: var(--text); }
+
 /* ── USER BADGE ── */
 .user-badge {
   font-size: 12px;
@@ -903,6 +1067,9 @@ main {
 #btn-status-needs-entry.active,
 #btn-status-needs-wash.active { background: #a13d3d; border-color: #a13d3d; color: #fff; }
 #btn-status-undo { margin-top: 6px; }
+.status-note-group { margin-bottom: 8px; }
+.status-note-group label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: normal; }
+#f-status-note { font-size: 13px; }
 
 /* ── UŽDUOTIES BŪSENA (kortelėje) ── */
 .event-card.status-done {
@@ -912,7 +1079,8 @@ main {
 }
 .event-card.status-done .event-title,
 .event-card.status-done .event-time,
-.event-card.status-done .event-car { color: var(--text3); }
+.event-card.status-done .event-car,
+.event-card.status-done .event-desc { color: var(--text3); }
 .event-card.status-needs-entry,
 .event-card.status-needs-wash {
   background: #a13d3d !important;
@@ -923,9 +1091,11 @@ main {
 .event-card.status-needs-entry .event-title,
 .event-card.status-needs-entry .event-time,
 .event-card.status-needs-entry .event-car,
+.event-card.status-needs-entry .event-desc,
 .event-card.status-needs-wash .event-title,
 .event-card.status-needs-wash .event-time,
-.event-card.status-needs-wash .event-car { color: #fff; }
+.event-card.status-needs-wash .event-car,
+.event-card.status-needs-wash .event-desc { color: #fff; }
 .event-card.status-active { box-shadow: 0 0 0 1px #2563eb, 0 2px 6px rgba(0,0,0,.4); }
 .event-card.status-active:hover { box-shadow: 0 0 0 1px #2563eb, 0 4px 12px rgba(0,0,0,.6); }
 
@@ -971,7 +1141,6 @@ main {
   <div class="page-tabs-brand">Vag Workshop</div>
   <button class="page-tab active" data-page="calendar">🗓️ <span class="tab-label">Kalendorius</span></button>
   <button class="page-tab" data-page="jobs">🛠️ <span class="tab-label tab-label-full">Darbų valdymas</span><span class="tab-label tab-label-short">Darbai</span></button>
-  <button class="page-tab" data-page="clients">👤 <span class="tab-label">Klientai</span></button>
   <button class="page-tab" data-page="vehicles">🚗 <span class="tab-label">Automobiliai</span></button>
   <span class="page-tabs-note">Bandomasis rodinys — dar netvirtinta, nekeliama į serverį</span>
 </div>
@@ -1035,15 +1204,18 @@ main {
         <option value="needs_entry">Reikia suvedimo</option>
         <option value="needs_wash">Reikia variklio plovimo</option>
       </select>
+      <label class="jobs-archive-toggle"><input type="checkbox" id="jobs-show-archived"> Rodyti archyvą</label>
       <div class="spacer"></div>
+      <button class="btn" id="btn-templates-open">📋 Šablonai</button>
       <button class="btn btn-primary" id="btn-jobs-new">+ Naujas darbas</button>
     </div>
     <div class="page-table-wrap">
       <table class="data-table" id="jobs-table">
         <thead>
           <tr>
-            <th></th><th>Data</th><th>Laikas</th><th>Keltuvas</th><th>Automobilis</th>
-            <th>Valst. nr.</th><th>Klientas</th><th>Telefonas</th><th>Būsena</th>
+            <th></th><th>Data</th><th>Laikas</th><th>Mechanikas</th><th>Automobilis</th>
+            <th>Valst. nr.</th><th>Rida</th><th>Klientas</th><th>Telefonas</th>
+            <th>Suma €</th><th>Apmokėta</th><th>Atsiskaitymas</th><th>Būsena</th><th></th>
           </tr>
         </thead>
         <tbody id="jobs-tbody"></tbody>
@@ -1052,29 +1224,16 @@ main {
     </div>
   </div>
 
-  <div id="page-clients" class="app-page hidden">
-    <div class="page-toolbar">
-      <input type="text" id="clients-search" placeholder="Ieškoti kliento...">
-    </div>
-    <div class="page-table-wrap">
-      <table class="data-table" id="clients-table">
-        <thead>
-          <tr><th>Klientas</th><th>Telefonas</th><th>Automobiliai</th><th>Darbų sk.</th><th>Paskutinis darbas</th></tr>
-        </thead>
-        <tbody id="clients-tbody"></tbody>
-      </table>
-      <div class="page-empty" id="clients-empty" style="display:none">Klientų nerasta.</div>
-    </div>
-  </div>
-
   <div id="page-vehicles" class="app-page hidden">
     <div class="page-toolbar">
       <input type="text" id="vehicles-search" placeholder="Ieškoti automobilio ar valst. nr...">
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="btn-vehicles-new">+ Naujas automobilis</button>
     </div>
     <div class="page-table-wrap">
       <table class="data-table" id="vehicles-table">
         <thead>
-          <tr><th>Automobilis</th><th>Valst. nr.</th><th>Klientas(-ai)</th><th>Darbų sk.</th><th>Paskutinis darbas</th></tr>
+          <tr><th></th><th>Automobilis</th><th>Valst. nr.</th><th>Klientas</th><th>Telefonas</th><th>Darbų sk.</th><th>Paskutinis darbas</th></tr>
         </thead>
         <tbody id="vehicles-tbody"></tbody>
       </table>
@@ -1124,6 +1283,10 @@ main {
   <div class="modal" id="modal">
     <h2 id="modal-title">Naujas darbas</h2>
     <div class="form-group" style="margin-bottom:14px" id="status-btn-group">
+      <div class="form-group status-note-group">
+        <label for="f-status-note">Pastaba skliausteliuose (nebūtina) — įveskite prieš pažymėdami būseną</label>
+        <input type="text" id="f-status-note" maxlength="200" placeholder="pvz. nuimtas reduktorius">
+      </div>
       <div class="status-btn-row">
         <button type="button" class="btn btn-status" id="btn-status-done">✓ Darbas baigtas</button>
         <button type="button" class="btn btn-status" id="btn-status-needs-entry">❗ Baigta, reikia suvedimo</button>
@@ -1132,6 +1295,13 @@ main {
       <button type="button" class="btn" id="btn-status-undo" style="width:100%; display:none">↺ Grąžinti į suplanuotą</button>
       <div style="font-size:11px; color:var(--text3); margin-top:4px">Darbas kalendoriuje pats pasižymi vykdomu (▶), kai ateina jo laikas — nereikia paspausti atskirai. (Laukiantiems darbams, sukurtiems 5.00–7.00 juostoje, tai negalioja.)</div>
     </div>
+    <label class="modal-job-toggle">
+      <input type="checkbox" id="f-show-in-jobs" checked>
+      <span>
+        Sukurti darbą (rodyti Darbų valdymo skirtuke)
+        <div class="modal-job-toggle-hint">Jei nuimsite varnelę, įrašas liks tik kalendoriuje — Darbų valdyme jo nesimatys.</div>
+      </span>
+    </label>
     <div class="form-row">
       <div class="form-group">
         <label>Keltuvas</label>
@@ -1145,17 +1315,22 @@ main {
     <div class="form-row">
       <div class="form-group">
         <label>Valstybinis nr.</label>
-        <input type="text" id="f-plate" placeholder="ABC123">
+        <input type="text" id="f-plate" placeholder="ABC123" list="plate-suggestions" autocomplete="off">
+        <datalist id="plate-suggestions"></datalist>
       </div>
+      <div class="form-group">
+        <label>Rida</label>
+        <input type="text" id="f-mileage" placeholder="pvz. 158000 km">
+      </div>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label>Telefono nr.</label>
         <input type="text" id="f-phone" placeholder="+370 6XX XXXXX">
       </div>
-    </div>
-    <div class="form-row full">
       <div class="form-group">
         <label>Klientas</label>
-        <input type="text" id="f-client" placeholder="Vardas Pavardė">
+        <input type="text" id="f-client" placeholder="Vardas Pavardė arba įmonė">
       </div>
     </div>
     <div class="form-row">
@@ -1186,11 +1361,110 @@ main {
     </div>
     <div class="error-msg" id="f-error"></div>
     <div class="modal-actions">
+      <button class="btn" id="btn-duplicate" style="display:none">⧉ Dubliuoti</button>
       <button class="btn-danger" id="btn-delete" style="display:none; margin-right:auto">Trinti</button>
       <button class="btn-cancel" id="btn-cancel">Atšaukti</button>
       <button class="btn-primary" id="btn-save">Išsaugoti</button>
     </div>
   </div>
+</div>
+
+<!-- Automobilio langas (sukurti / redaguoti + remonto istorija) -->
+<div class="overlay hidden" id="vehicle-overlay">
+  <div class="modal" id="vehicle-modal" style="width:min(560px, 95vw)">
+    <h2 id="vehicle-modal-title">Naujas automobilis</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valstybinis nr.</label>
+        <input type="text" id="v-plate" placeholder="ABC123">
+      </div>
+      <div class="form-group">
+        <label>Automobilis (markė, modelis)</label>
+        <input type="text" id="v-car" placeholder="VW Golf">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Klientas</label>
+        <input type="text" id="v-client" placeholder="Vardas Pavardė arba įmonė">
+      </div>
+      <div class="form-group">
+        <label>Telefono nr.</label>
+        <input type="text" id="v-phone" placeholder="+370 6XX XXXXX">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Nuotrauka</label>
+        <div class="vehicle-photo-row">
+          <img id="v-photo-preview" class="vehicle-photo-preview hidden" alt="Automobilio nuotrauka">
+          <div class="vehicle-photo-controls">
+            <input type="file" id="v-photo-input" accept="image/*">
+            <button type="button" class="btn" id="v-photo-remove" style="display:none">Pašalinti nuotrauką</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="error-msg" id="v-error"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="v-btn-delete" style="display:none; margin-right:auto">Trinti</button>
+      <button class="btn-cancel" id="v-btn-cancel">Atšaukti</button>
+      <button class="btn-primary" id="v-btn-save">Išsaugoti</button>
+    </div>
+    <div class="vehicle-history" id="vehicle-history" style="display:none">
+      <h3>Remonto istorija</h3>
+      <table class="detail-table" id="vehicle-history-table">
+        <thead><tr><th>Data</th><th>Aprašymas</th><th>Suma €</th><th>Būsena</th></tr></thead>
+        <tbody id="vehicle-history-tbody"></tbody>
+      </table>
+      <div class="detail-table-empty" id="vehicle-history-empty" style="display:none">Šiam automobiliui darbų dar nėra.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Darbų šablonų sąrašas (pvz. "Audi A6 grandinės keitimas") — žr. buildTemplatesModal ir susijusias funkcijas. -->
+<div class="overlay hidden" id="templates-overlay">
+  <div class="modal" id="templates-modal" style="width:min(640px, 95vw)">
+    <h2>Darbų šablonai</h2>
+    <div style="font-size:12px; color:var(--text3); margin-bottom:10px">Iš anksto paruoštas dalių/darbų sąrašas (pvz. konkrečiam remontui), kurį galima vienu paspaudimu pridėti prie bet kurio darbo — žr. mygtuką „Pritaikyti šabloną" ties darbo dalimis/atliktais darbais.</div>
+    <div class="page-table-wrap" style="max-height:48vh; overflow:auto;">
+      <table class="data-table" id="templates-table">
+        <thead><tr><th>Pavadinimas</th><th>Dalių</th><th>Darbų</th><th></th></tr></thead>
+        <tbody id="templates-tbody"></tbody>
+      </table>
+      <div class="page-empty" id="templates-empty" style="display:none">Šablonų dar nėra.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-template-new">+ Naujas šablonas</button>
+      <div class="spacer"></div>
+      <button class="btn-cancel" id="templates-close">Uždaryti</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vieno šablono kūrimas/redagavimas. -->
+<div class="overlay hidden" id="template-edit-overlay">
+  <div class="modal" id="template-edit-modal" style="width:min(760px, 95vw)">
+    <h2 id="template-edit-title">Naujas šablonas</h2>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Pavadinimas</label>
+      <input type="text" id="tpl-name" placeholder="Pvz. Audi A6 grandinės keitimas">
+    </div>
+    <div id="tpl-parts-section"></div>
+    <div id="tpl-work-section"></div>
+    <div class="error-msg" id="tpl-error"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="tpl-btn-delete" style="display:none; margin-right:auto">Trinti šabloną</button>
+      <button class="btn-cancel" id="tpl-btn-cancel">Atšaukti</button>
+      <button class="btn-primary" id="tpl-btn-save">Išsaugoti šabloną</button>
+    </div>
+  </div>
+</div>
+
+<!-- Laikinas pranešimas po ištrynimo su "Anuliuoti" mygtuku — žr. showUndoToast(). -->
+<div class="undo-toast hidden" id="undo-toast">
+  <span id="undo-toast-msg"></span>
+  <button type="button" id="undo-toast-btn">Anuliuoti</button>
 </div>
 
 <script>
@@ -1236,16 +1510,37 @@ let events = [];
 let dragState = null;
 let editingId = null;
 let modalStatus = 'planned';
+// Redagavimo lango "Pradžia" laukelio ankstesnė reikšmė (pusvalandžio
+// tarpsniu) — naudojama automatiškai pastumti "Pabaigą" ta pačia trukme,
+// kai vartotojas pakeičia pradžios laiką. Žr. f-start "change" klausiklį.
+let modalPrevStartSlot = null;
+// Laukiantis "anuliuoti ištrynimą" veiksmas — žr. showUndoToast() žemiau.
+// Ne masyvas/eilė sąmoningai: jei vartotojas ištrina antrą įrašą kol pirmojo
+// laikas dar neišbėgęs, pirmasis iškart patvirtinamas (ištrinamas realiai),
+// kad rodomas būtų tik vienas anuliavimo langas vienu metu.
+let pendingUndo = null;
 let nowLineTimer = null;
 let currentUser = null;
 // Kuris programos "langas" (puslapis) šiuo metu aktyvus — žr. switchPage().
 let currentPage = 'calendar';
 let jobsSearch = '';
 let jobsStatusFilter = 'all';
+// Ar Darbų valdymo lange šiuo metu rodomas archyvas (užbaigti, perkelti
+// projektai), ar aktyvus (nearchyvuotas) sąrašas — žr. #jobs-show-archived.
+let jobsShowArchived = false;
 // Kurie darbai šiuo metu išskleisti Darbų valdyme (dalys / atlikti darbai).
 let expandedJobIds = new Set();
-let clientsSearch = '';
 let vehiclesSearch = '';
+// Automobilių duomenų bazė (žr. /api/vehicles) — atskira nuo events, bet
+// automatiškai papildoma, kai darbe suvedamas naujas valstybinis numeris.
+let vehicles = [];
+let editingVehicleId = null;
+// Darbų šablonai (pvz. "Audi A6 grandinės keitimas") — žr. /api/templates,
+// buildTemplatesModal ir "Pritaikyti šabloną" darbo dalių/darbų sekcijose.
+let templates = [];
+let editingTemplateId = null;
+let vehiclePhotoDataUrl = null; // laukiantis įkelti (dar neišsaugotas) nuotraukos duomenų URL
+let vehiclePhotoRemoved = false;
 // Kalendoriuje rodomi keltuvai — pilnos prieigos vartotojams (savininkas,
 // priėmėjas) visi 4, darbuotojui tik jam priskirti (žr. applyUserAccess()).
 let VISIBLE_LIFTS = LIFTS;
@@ -1368,7 +1663,6 @@ function formatNavDisplay() {
    dabar automatiškai perpiešia teisingą puslapį — nieko keisti nereikėjo. */
 function render() {
   if (currentPage === 'jobs') renderJobsPage();
-  else if (currentPage === 'clients') renderClientsPage();
   else if (currentPage === 'vehicles') renderVehiclesPage();
   else renderCalendarPage();
 }
@@ -1401,7 +1695,18 @@ function jobMatchesSearch(ev, q) {
   const hay = [ev.car, ev.plate, ev.client, ev.phone].filter(Boolean).join(' ').toLowerCase();
   return hay.includes(q);
 }
-const JOBS_TABLE_COLSPAN = 9; // skirtukas + 7 stulpeliai + būsena
+const JOBS_TABLE_COLSPAN = 14; // skirtukas + 9 stulpeliai + suma/apmokėta/atsiskaitymas + būsena + archyvas
+const PAID_LABELS = { no: 'Neapmokėta', yes: 'Apmokėta' };
+const PAYMENT_METHOD_LABELS = { '': '—', sf: 'SF', be_sf: 'Be SF' };
+
+// Bet kokį darbo lauką (status/mileage/paid/paymentMethod/archived) galima
+// pakeisti tiesiai lentelėje, be redagavimo lango — iškart išsaugoma serveryje.
+async function patchJobField(id, patch) {
+  const updated = await apiFetch('/api/events/' + id, { method: 'PUT', body: JSON.stringify(patch) });
+  const idx = events.findIndex(e => e.id === id);
+  if (idx !== -1) events[idx] = updated;
+  return updated;
+}
 
 function renderJobsPage() {
   const tbody = document.getElementById('jobs-tbody');
@@ -1410,18 +1715,24 @@ function renderJobsPage() {
 
   const q = jobsSearch.trim().toLowerCase();
   const visible = user_lifts_filter(events)
+    // Kuriant įrašą kalendoriuje/darbų valdyme galima nuimti "Sukurti darbą"
+    // varnelę — toks įrašas lieka tik kalendoriuje, Darbų valdyme jo
+    // nerodome. Senesni įrašai be šio lauko laikomi rodomais (kaip anksčiau).
+    .filter(ev => ev.showInJobs !== false)
+    .filter(ev => !!ev.archived === jobsShowArchived)
     .filter(ev => (jobsStatusFilter === 'all' || (ev.status || 'planned') === jobsStatusFilter))
     .filter(ev => jobMatchesSearch(ev, q))
     .sort((a, b) => (b.dateFrom + b.start).localeCompare(a.dateFrom + a.start));
 
   emptyEl.style.display = visible.length ? 'none' : '';
+  emptyEl.textContent = jobsShowArchived ? 'Archyve darbų nėra.' : 'Darbų nerasta.';
 
   const STATUS_LABEL = { planned: 'Suplanuota', done: 'Baigta', needs_entry: 'Reikia suvedimo', needs_wash: 'Reikia plovimo' };
 
   visible.forEach(ev => {
     const isExpanded = expandedJobIds.has(ev.id);
     const tr = document.createElement('tr');
-    const lift = liftById(ev.lift);
+    const mechanic = empForLift(ev.lift);
     const dateText = ev.dateFrom === (ev.dateTo || ev.dateFrom) ? formatShortDate(parseIso(ev.dateFrom)) :
       formatShortDate(parseIso(ev.dateFrom)) + ' – ' + formatShortDate(parseIso(ev.dateTo));
     const status = ev.status || 'planned';
@@ -1447,9 +1758,10 @@ function renderJobsPage() {
     const cells = [
       dateText,
       ev.start + '–' + ev.end,
-      lift ? lift.label : ev.lift,
+      mechanic ? mechanic.label : (ev.lift || '—'),
       carCellText,
       ev.plate || '—',
+      ev.mileage || '—',
       ev.client || '—',
       ev.phone || '—',
     ];
@@ -1464,16 +1776,85 @@ function renderJobsPage() {
       }
       tr.appendChild(td);
     });
+
+    // Suma — skaičiuojama iš dalių/darbų (kaip suvestinėje), tik peržiūrai.
+    const sumTd = document.createElement('td');
+    sumTd.textContent = moneyFmt(calcJobTotal(ev).totalVat) + ' €';
+    tr.appendChild(sumTd);
+
+    // Apmokėta / Atsiskaitymo būdas — redaguojama tiesiai lentelėje, iškart išsaugoma.
+    const paidTd = document.createElement('td');
+    const paidSel = document.createElement('select');
+    paidSel.className = 'row-select';
+    Object.entries(PAID_LABELS).forEach(([val, label]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = label;
+      paidSel.appendChild(opt);
+    });
+    paidSel.value = ev.paid === 'yes' ? 'yes' : 'no';
+    paidSel.classList.toggle('is-good', paidSel.value === 'yes');
+    paidSel.classList.toggle('is-bad', paidSel.value === 'no');
+    paidSel.disabled = READ_ONLY;
+    paidSel.addEventListener('click', e => e.stopPropagation());
+    paidSel.addEventListener('change', async () => {
+      try {
+        await patchJobField(ev.id, { paid: paidSel.value });
+        renderJobsPage();
+      } catch (err) { alert('Nepavyko išsaugoti: ' + err.message); renderJobsPage(); }
+    });
+    paidTd.appendChild(paidSel);
+    tr.appendChild(paidTd);
+
+    const paymentTd = document.createElement('td');
+    const paymentSel = document.createElement('select');
+    paymentSel.className = 'row-select';
+    Object.entries(PAYMENT_METHOD_LABELS).forEach(([val, label]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = label;
+      paymentSel.appendChild(opt);
+    });
+    paymentSel.value = PAYMENT_METHOD_LABELS[ev.paymentMethod] !== undefined ? ev.paymentMethod : '';
+    paymentSel.disabled = READ_ONLY;
+    paymentSel.addEventListener('click', e => e.stopPropagation());
+    paymentSel.addEventListener('change', async () => {
+      try {
+        await patchJobField(ev.id, { paymentMethod: paymentSel.value });
+        renderJobsPage();
+      } catch (err) { alert('Nepavyko išsaugoti: ' + err.message); renderJobsPage(); }
+    });
+    paymentTd.appendChild(paymentSel);
+    tr.appendChild(paymentTd);
+
     const statusTd = document.createElement('td');
     const pill = document.createElement('span');
     pill.className = 'status-pill ' + status;
-    pill.textContent = STATUS_LABEL[status] || status;
+    const statusBaseLabel = STATUS_LABEL[status] || status;
+    pill.textContent = (status !== 'planned' && ev.statusNote) ? statusBaseLabel + ' (' + ev.statusNote + ')' : statusBaseLabel;
     statusTd.appendChild(pill);
     tr.appendChild(statusTd);
-    // Paspaudus eilutę (bet ne skleidimo mygtuką) — atsidaro įprastas
-    // redagavimo langas su pagrindiniais laukais (klientas, automobilis,
-    // laikas ir t.t.). Skleidimo mygtukas atskirai atveria dalių/darbų
-    // detales tiesiai po eilute.
+
+    // Archyvas — perkelia užbaigtą darbą iš aktyvaus sąrašo (arba grąžina atgal).
+    const archiveTd = document.createElement('td');
+    if (!READ_ONLY) {
+      const archiveBtn = document.createElement('button');
+      archiveBtn.className = 'archive-btn';
+      archiveBtn.textContent = jobsShowArchived ? '↩ Grąžinti' : '→ Archyvuoti';
+      archiveBtn.title = jobsShowArchived ? 'Grąžinti į aktyvų sąrašą' : 'Perkelti į archyvą';
+      archiveBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        try {
+          await patchJobField(ev.id, { archived: !jobsShowArchived });
+          renderJobsPage();
+        } catch (err) { alert('Nepavyko išsaugoti: ' + err.message); }
+      });
+      archiveTd.appendChild(archiveBtn);
+    }
+    tr.appendChild(archiveTd);
+
+    // Paspaudus eilutę (bet ne skleidimo mygtuką / pasirinkimus) — atsidaro
+    // įprastas redagavimo langas su pagrindiniais laukais (klientas,
+    // automobilis, laikas ir t.t.). Skleidimo mygtukas atskirai atveria
+    // dalių/darbų detales tiesiai po eilute.
     tr.addEventListener('click', () => openEditModal(ev.id));
     tbody.appendChild(tr);
 
@@ -1530,7 +1911,10 @@ function buildJobDetailPanel(ev) {
   return wrap;
 }
 
-function renderTotalsBar(el, ev) {
+// Bendra darbo sąmatos suma — naudojama tiek darbo detalių suvestinėje
+// (renderTotalsBar), tiek Darbų valdymo lentelės "Suma" stulpelyje, tiek
+// automobilio remonto istorijoje.
+function calcJobTotal(ev) {
   const parts = ev.parts || [];
   const work = ev.workItems || [];
   const partsSum = parts.reduce((s, p) => s + parseNum(p.price) * (parseNum(p.qty) || 1), 0);
@@ -1538,6 +1922,10 @@ function renderTotalsBar(el, ev) {
   const workSumVat = workSum * VAT_RATE;
   const totalNoVat = workSum + partsSum;
   const totalVat = workSumVat + partsSum;
+  return { partsSum, workSum, workSumVat, totalNoVat, totalVat };
+}
+function renderTotalsBar(el, ev) {
+  const { partsSum, workSum, workSumVat, totalNoVat, totalVat } = calcJobTotal(ev);
 
   el.innerHTML = '';
   const addRow = (label, value, strong) => {
@@ -1560,6 +1948,47 @@ function buildDetailSaveStatus() {
   const el = document.createElement('span');
   el.className = 'detail-save-status';
   return el;
+}
+
+// "Pritaikyti šabloną" — pasirinkimo laukelis, kuris PRIDEDA (ne pakeičia)
+// pasirinkto šablono dalis/darbus prie jau esamo darbo sąrašo (žr. pokalbį
+// dėl šios funkcijos — pasirinkta pridėti prie esamų, kad būtų galima
+// derinti kelis šablonus arba papildyti rankiniu būdu įvestas dalis).
+// `kind` — 'parts' arba 'workItems'; `data` — mutuojamas masyvas (tas pats,
+// kurį naudoja renderRows uždarinys); pritaikius, iškart perpiešiama, bet
+// dar NEIŠSAUGOMA — kaip ir pridėjus eilutę rankiniu būdu, reikia paspausti
+// "Išsaugoti dalis"/"Išsaugoti darbus".
+function buildApplyTemplateSelect(kind, data, renderRows) {
+  const sel = document.createElement('select');
+  sel.className = 'apply-template-select';
+  const relevant = templates.filter(t => (t[kind] || []).length);
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = relevant.length ? '⇩ Pritaikyti šabloną…' : 'Šablonų dar nėra';
+  sel.appendChild(placeholder);
+  relevant.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name + ' (' + t[kind].length + ')';
+    sel.appendChild(opt);
+  });
+  sel.disabled = !relevant.length;
+  sel.addEventListener('change', () => {
+    const tpl = templates.find(t => t.id === sel.value);
+    sel.value = '';
+    if (!tpl) return;
+    // Nauja (be id) kopija kiekvienam elementui — id priskirs serveris
+    // išsaugojant (žr. sanitizeParts/sanitizeWorkItems server.js), kad
+    // skirtingiems darbams pritaikytos to paties šablono dalys nesidalintų
+    // tuo pačiu id.
+    (tpl[kind] || []).forEach(item => {
+      const copy = { ...item };
+      delete copy.id;
+      data.push(copy);
+    });
+    renderRows();
+  });
+  return sel;
 }
 function showDetailSaveResult(statusEl, ok, errMsg) {
   statusEl.textContent = ok ? 'Išsaugota ✓' : ('Klaida: ' + errMsg);
@@ -1727,6 +2156,7 @@ function buildPartsSection(ev, onSaved) {
   const btnRow = document.createElement('div');
   btnRow.className = 'detail-btn-row';
   btnRow.appendChild(addBtn);
+  btnRow.appendChild(buildApplyTemplateSelect('parts', data, renderRows));
   btnRow.appendChild(saveBtn);
   btnRow.appendChild(statusEl);
 
@@ -2018,6 +2448,7 @@ function buildWorkSection(ev, onSaved) {
   const btnRow = document.createElement('div');
   btnRow.className = 'detail-btn-row';
   btnRow.appendChild(addBtn);
+  btnRow.appendChild(buildApplyTemplateSelect('workItems', data, renderRows));
   btnRow.appendChild(saveBtn);
   btnRow.appendChild(statusEl);
 
@@ -2027,103 +2458,552 @@ function buildWorkSection(ev, onSaved) {
   return section;
 }
 
+/* ── DARBŲ ŠABLONAI (valdymas) ──
+   Iš anksto paruoštas dalių/darbų sąrašas (pvz. "Audi A6 grandinės
+   keitimas", "DSG DQ250 alyvos keitimas"), kurį galima vienu pasirinkimu
+   pridėti prie bet kurio darbo — žr. buildApplyTemplateSelect aukščiau.
+   Čia — pačių šablonų sąrašo/kūrimo/redagavimo/trynimo langai. */
+
+function renderTemplatesTable() {
+  const tbody = document.getElementById('templates-tbody');
+  const emptyEl = document.getElementById('templates-empty');
+  tbody.innerHTML = '';
+  const sorted = [...templates].sort((a, b) => a.name.localeCompare(b.name, 'lt'));
+  emptyEl.style.display = sorted.length ? 'none' : '';
+  sorted.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    const nameTd = document.createElement('td');
+    nameTd.textContent = t.name;
+    const partsTd = document.createElement('td');
+    partsTd.textContent = String((t.parts || []).length);
+    const workTd = document.createElement('td');
+    workTd.textContent = String((t.workItems || []).length);
+    const actionsTd = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn';
+    editBtn.style.fontSize = '12px';
+    editBtn.textContent = 'Redaguoti';
+    editBtn.addEventListener('click', e => { e.stopPropagation(); openTemplateEditModal(t.id); });
+    actionsTd.appendChild(editBtn);
+    tr.appendChild(nameTd); tr.appendChild(partsTd); tr.appendChild(workTd); tr.appendChild(actionsTd);
+    tr.addEventListener('click', () => openTemplateEditModal(t.id));
+    tbody.appendChild(tr);
+  });
+}
+
+function openTemplatesModal() {
+  renderTemplatesTable();
+  document.getElementById('templates-overlay').classList.remove('hidden');
+}
+function closeTemplatesModal() {
+  document.getElementById('templates-overlay').classList.add('hidden');
+}
+document.getElementById('btn-templates-open').addEventListener('click', openTemplatesModal);
+document.getElementById('templates-close').addEventListener('click', closeTemplatesModal);
+document.getElementById('templates-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('templates-overlay')) closeTemplatesModal();
+});
+document.getElementById('btn-template-new').addEventListener('click', () => openTemplateEditModal(null));
+
+// Paprastas dalių sąrašo redaktorius šablono lange — be atskiro "Išsaugoti"
+// mygtuko/API iškvietimo kiekvienai eilutei (skirtingai nei tikro darbo
+// dalys/darbai — čia visas šablonas išsaugomas vienu kartu, žr.
+// saveTemplateModal). Laukų mažiau nei tikro darbo dalyse — praleidžiami
+// vykdymo metu pildomi laukai (terminas, užsakymo statusas), nes jie
+// priklauso konkrečiam darbui, ne šablonui.
+function buildTplPartsEditor(initialParts) {
+  const wrap = document.createElement('div');
+  wrap.className = 'job-detail-section';
+  const title = document.createElement('h4');
+  title.textContent = 'Dalys';
+  wrap.appendChild(title);
+
+  const table = document.createElement('table');
+  table.className = 'detail-table';
+  table.innerHTML = '<thead><tr><th>Pavadinimas</th><th>Kaina €</th><th>Kiekis</th><th>Kodas</th><th>OE kodas</th><th>Tiekėjas</th><th></th></tr></thead>';
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
+  let data = (initialParts || []).map(p => ({ ...p }));
+
+  function renderRows() {
+    tbody.innerHTML = '';
+    if (!data.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 7;
+      td.className = 'detail-table-empty';
+      td.textContent = 'Dalių dar nėra.';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    data.forEach((p, idx) => {
+      const tr = document.createElement('tr');
+      [['name', 'Pvz. Grandinės komplektas'], ['price', '0,00'], ['qty', '1'], ['code', ''], ['oeCode', ''], ['supplier', '']].forEach(([key, placeholder]) => {
+        const td = document.createElement('td');
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        if (placeholder) inp.placeholder = placeholder;
+        inp.value = p[key] || '';
+        inp.addEventListener('input', () => { p[key] = inp.value; });
+        td.appendChild(inp);
+        tr.appendChild(td);
+      });
+      const delTd = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'detail-del-btn';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', () => { data.splice(idx, 1); renderRows(); });
+      delTd.appendChild(delBtn);
+      tr.appendChild(delTd);
+      tbody.appendChild(tr);
+    });
+  }
+  renderRows();
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.textContent = '+ Pridėti dalį';
+  addBtn.addEventListener('click', () => { data.push({ name: '', price: '', qty: '', code: '', oeCode: '', supplier: '' }); renderRows(); });
+
+  wrap.appendChild(table);
+  wrap.appendChild(addBtn);
+  return { el: wrap, getData: () => data };
+}
+
+function buildTplWorkEditor(initialWork) {
+  const wrap = document.createElement('div');
+  wrap.className = 'job-detail-section';
+  const title = document.createElement('h4');
+  title.textContent = 'Atliekami darbai';
+  wrap.appendChild(title);
+
+  const table = document.createElement('table');
+  table.className = 'detail-table';
+  table.innerHTML = '<thead><tr><th>Aprašymas</th><th>Kaina €</th><th></th></tr></thead>';
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
+  let data = (initialWork || []).map(w => ({ ...w }));
+
+  function renderRows() {
+    tbody.innerHTML = '';
+    if (!data.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 3;
+      td.className = 'detail-table-empty';
+      td.textContent = 'Darbų dar nėra.';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    data.forEach((w, idx) => {
+      const tr = document.createElement('tr');
+      const descTd = document.createElement('td');
+      const descInp = document.createElement('input');
+      descInp.type = 'text';
+      descInp.placeholder = 'Pvz. Grandinės ir įtempiklių keitimas';
+      descInp.value = w.desc || '';
+      descInp.addEventListener('input', () => { w.desc = descInp.value; });
+      descTd.appendChild(descInp);
+      tr.appendChild(descTd);
+
+      const priceTd = document.createElement('td');
+      const priceInp = document.createElement('input');
+      priceInp.type = 'text';
+      priceInp.placeholder = '0,00';
+      priceInp.value = w.price || '';
+      priceInp.addEventListener('input', () => { w.price = priceInp.value; });
+      priceTd.appendChild(priceInp);
+      tr.appendChild(priceTd);
+
+      const delTd = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'detail-del-btn';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', () => { data.splice(idx, 1); renderRows(); });
+      delTd.appendChild(delBtn);
+      tr.appendChild(delTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+  renderRows();
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.textContent = '+ Pridėti darbą';
+  addBtn.addEventListener('click', () => { data.push({ desc: '', price: '' }); renderRows(); });
+
+  wrap.appendChild(table);
+  wrap.appendChild(addBtn);
+  return { el: wrap, getData: () => data };
+}
+
+let tplPartsEditor = null, tplWorkEditor = null;
+
+function openTemplateEditModal(id) {
+  editingTemplateId = id;
+  const tpl = id ? templates.find(t => t.id === id) : null;
+  document.getElementById('template-edit-title').textContent = tpl ? 'Redaguoti šabloną' : 'Naujas šablonas';
+  document.getElementById('tpl-name').value = tpl ? tpl.name : '';
+  document.getElementById('tpl-btn-delete').style.display = tpl ? '' : 'none';
+  document.getElementById('tpl-error').style.display = 'none';
+
+  const partsHost = document.getElementById('tpl-parts-section');
+  const workHost = document.getElementById('tpl-work-section');
+  partsHost.innerHTML = '';
+  workHost.innerHTML = '';
+  tplPartsEditor = buildTplPartsEditor(tpl ? tpl.parts : []);
+  tplWorkEditor = buildTplWorkEditor(tpl ? tpl.workItems : []);
+  partsHost.appendChild(tplPartsEditor.el);
+  workHost.appendChild(tplWorkEditor.el);
+
+  document.getElementById('template-edit-overlay').classList.remove('hidden');
+}
+function closeTemplateEditModal() {
+  document.getElementById('template-edit-overlay').classList.add('hidden');
+  editingTemplateId = null;
+}
+function showTplErr(msg) {
+  const el = document.getElementById('tpl-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+async function saveTemplateModal() {
+  const name = document.getElementById('tpl-name').value.trim();
+  if (!name) { showTplErr('Įveskite šablono pavadinimą.'); return; }
+  const payload = { name, parts: tplPartsEditor.getData(), workItems: tplWorkEditor.getData() };
+  try {
+    let saved;
+    if (editingTemplateId) {
+      saved = await apiFetch('/api/templates/' + editingTemplateId, { method: 'PUT', body: JSON.stringify(payload) });
+      const idx = templates.findIndex(t => t.id === editingTemplateId);
+      if (idx !== -1) templates[idx] = saved;
+    } else {
+      saved = await apiFetch('/api/templates', { method: 'POST', body: JSON.stringify(payload) });
+      templates.push(saved);
+    }
+    closeTemplateEditModal();
+    renderTemplatesTable();
+  } catch (err) {
+    showTplErr('Nepavyko išsaugoti: ' + err.message);
+  }
+}
+// Trynimas per tą patį "laikino pranešimo su Anuliuoti" mechanizmą, kaip ir
+// darbo/automobilio trynimas (žr. showUndoToast) — nuoseklu su likusia
+// programa, be papildomo confirm() dialogo.
+function deleteTemplateModal() {
+  if (!editingTemplateId) return;
+  const id = editingTemplateId;
+  const idx = templates.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const removed = templates[idx];
+  templates.splice(idx, 1);
+  closeTemplateEditModal();
+  renderTemplatesTable();
+  showUndoToast('Šablonas ištrintas.', () => {
+    templates.push(removed);
+    renderTemplatesTable();
+  }, async () => {
+    try {
+      await apiFetch('/api/templates/' + id, { method: 'DELETE' });
+    } catch (err) {
+      templates.push(removed);
+      renderTemplatesTable();
+      alert('Nepavyko ištrinti šablono: ' + err.message);
+    }
+  });
+}
+document.getElementById('tpl-btn-cancel').addEventListener('click', closeTemplateEditModal);
+document.getElementById('tpl-btn-save').addEventListener('click', saveTemplateModal);
+document.getElementById('tpl-btn-delete').addEventListener('click', deleteTemplateModal);
+document.getElementById('template-edit-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('template-edit-overlay')) closeTemplateEditModal();
+});
+
 // Darbuotojo paskyra jau gauna iš serverio tik jai priskirtų keltuvų
 // įrašus (žr. server.js), tad papildomo filtravimo čia nereikia — funkcija
 // palikta kaip aiškus taškas, jei ateityje reikėtų kliento pusėje siaurinti.
 function user_lifts_filter(evs) { return evs; }
 
-/* ── KLIENTŲ LANGAS (išvedama iš darbų įrašų) ── */
-function buildClientIndex() {
-  const map = new Map();
-  events.forEach(ev => {
-    const name = (ev.client || '').trim();
-    if (!name) return;
-    const phone = (ev.phone || '').trim();
-    const key = name.toLowerCase() + '|' + phone.toLowerCase();
-    if (!map.has(key)) map.set(key, { name, phone, cars: new Set(), jobCount: 0, lastDate: ev.dateFrom, sampleId: ev.id });
-    const c = map.get(key);
-    if (ev.car) c.cars.add(ev.car + (ev.plate ? ' (' + ev.plate + ')' : ''));
-    c.jobCount++;
-    if (ev.dateFrom > c.lastDate) { c.lastDate = ev.dateFrom; c.sampleId = ev.id; }
-  });
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'lt'));
+/* ── AUTOMOBILIAI: tikra duomenų bazė (žr. /api/vehicles), susieta su
+   darbais per valstybinį numerį. Automobilis atsiranda automatiškai, kai
+   darbe suvedamas valstybinis nr. (žr. server.js upsertVehicleForPlate),
+   arba jį galima suvesti rankiniu būdu čia. ── */
+function normalizePlateClient(p) { return (p || '').trim().toUpperCase(); }
+function vehicleByPlate(plate) {
+  const n = normalizePlateClient(plate);
+  if (!n) return null;
+  return vehicles.find(v => normalizePlateClient(v.plate) === n) || null;
 }
-function renderClientsPage() {
-  const tbody = document.getElementById('clients-tbody');
-  const emptyEl = document.getElementById('clients-empty');
-  tbody.innerHTML = '';
-  const q = clientsSearch.trim().toLowerCase();
-  const list = buildClientIndex().filter(c =>
-    !q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q) ||
-    Array.from(c.cars).join(' ').toLowerCase().includes(q)
-  );
-  emptyEl.style.display = list.length ? 'none' : '';
-  list.forEach(c => {
-    const tr = document.createElement('tr');
-    [c.name, c.phone || '—', Array.from(c.cars).join(', ') || '—', String(c.jobCount), formatShortDate(parseIso(c.lastDate))]
-      .forEach(text => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); });
-    tr.title = 'Spustelėkite, kad pamatytumėte šio kliento darbus';
-    tr.addEventListener('click', () => {
-      jobsSearch = c.name;
-      document.getElementById('jobs-search').value = c.name;
-      document.getElementById('jobs-status-filter').value = 'all';
-      jobsStatusFilter = 'all';
-      document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.page === 'jobs'));
-      document.querySelectorAll('.app-page').forEach(el => el.classList.toggle('hidden', el.id !== 'page-jobs'));
-      document.getElementById('cal-only-controls').style.display = 'none';
-      currentPage = 'jobs';
-      render();
-    });
-    tbody.appendChild(tr);
+// Automobilio darbų istorija (visi events su tuo pačiu valst. nr.), naujausi pirmi.
+function jobsForPlate(plate) {
+  const n = normalizePlateClient(plate);
+  if (!n) return [];
+  return events.filter(ev => normalizePlateClient(ev.plate) === n)
+    .sort((a, b) => (b.dateFrom + b.start).localeCompare(a.dateFrom + a.start));
+}
+function refreshPlateSuggestions() {
+  const list = document.getElementById('plate-suggestions');
+  if (!list) return;
+  list.innerHTML = '';
+  vehicles.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.plate;
+    list.appendChild(opt);
   });
 }
 
-/* ── AUTOMOBILIŲ LANGAS (išvedama iš darbų įrašų) ── */
-function buildVehicleIndex() {
-  const map = new Map();
-  events.forEach(ev => {
-    const car = (ev.car || '').trim();
-    const plate = (ev.plate || '').trim();
-    if (!car && !plate) return;
-    const key = (plate || car).toLowerCase();
-    if (!map.has(key)) map.set(key, { car, plate, clients: new Set(), jobCount: 0, lastDate: ev.dateFrom });
-    const v = map.get(key);
-    if (ev.client) v.clients.add(ev.client);
-    if (!v.car && car) v.car = car;
-    v.jobCount++;
-    if (ev.dateFrom > v.lastDate) v.lastDate = ev.dateFrom;
-  });
-  return Array.from(map.values()).sort((a, b) => (a.car || a.plate).localeCompare(b.car || b.plate, 'lt'));
-}
 function renderVehiclesPage() {
   const tbody = document.getElementById('vehicles-tbody');
   const emptyEl = document.getElementById('vehicles-empty');
   tbody.innerHTML = '';
   const q = vehiclesSearch.trim().toLowerCase();
-  const list = buildVehicleIndex().filter(v =>
-    !q || (v.car || '').toLowerCase().includes(q) || (v.plate || '').toLowerCase().includes(q)
-  );
+  const list = vehicles
+    .filter(v => !q || (v.car || '').toLowerCase().includes(q) || (v.plate || '').toLowerCase().includes(q) ||
+      (v.client || '').toLowerCase().includes(q))
+    .map(v => {
+      const jobs = jobsForPlate(v.plate);
+      return { v, jobCount: jobs.length, lastDate: jobs.length ? jobs[0].dateFrom : null };
+    })
+    .sort((a, b) => (a.v.car || a.v.plate).localeCompare(b.v.car || b.v.plate, 'lt'));
   emptyEl.style.display = list.length ? 'none' : '';
-  list.forEach(v => {
+  list.forEach(({ v, jobCount, lastDate }) => {
     const tr = document.createElement('tr');
-    [v.car || '—', v.plate || '—', Array.from(v.clients).join(', ') || '—', String(v.jobCount), formatShortDate(parseIso(v.lastDate))]
+    const thumbTd = document.createElement('td');
+    if (v.photoUrl) {
+      const img = document.createElement('img');
+      img.className = 'vehicle-table-thumb';
+      img.src = v.photoUrl;
+      img.alt = '';
+      thumbTd.appendChild(img);
+    }
+    tr.appendChild(thumbTd);
+    [v.car || '—', v.plate || '—', v.client || '—', v.phone || '—', String(jobCount), lastDate ? formatShortDate(parseIso(lastDate)) : '—']
       .forEach(text => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); });
-    tr.title = 'Spustelėkite, kad pamatytumėte šio automobilio darbus';
-    tr.addEventListener('click', () => {
-      const q2 = v.plate || v.car;
-      jobsSearch = q2;
-      document.getElementById('jobs-search').value = q2;
-      document.getElementById('jobs-status-filter').value = 'all';
-      jobsStatusFilter = 'all';
-      document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.page === 'jobs'));
-      document.querySelectorAll('.app-page').forEach(el => el.classList.toggle('hidden', el.id !== 'page-jobs'));
-      document.getElementById('cal-only-controls').style.display = 'none';
-      currentPage = 'jobs';
-      render();
-    });
+    tr.title = 'Spustelėkite, kad peržiūrėtumėte / redaguotumėte automobilį';
+    tr.addEventListener('click', () => openEditVehicleModal(v.id));
     tbody.appendChild(tr);
   });
 }
+
+/* ── AUTOMOBILIO LANGAS (sukurti / redaguoti + remonto istorija) ── */
+function resetVehiclePhotoState() {
+  vehiclePhotoDataUrl = null;
+  vehiclePhotoRemoved = false;
+  document.getElementById('v-photo-input').value = '';
+}
+function showVehiclePhotoPreview(src) {
+  const img = document.getElementById('v-photo-preview');
+  const removeBtn = document.getElementById('v-photo-remove');
+  if (src) {
+    img.src = src;
+    img.classList.remove('hidden');
+    removeBtn.style.display = '';
+  } else {
+    img.src = '';
+    img.classList.add('hidden');
+    removeBtn.style.display = 'none';
+  }
+}
+function showVehicleErr(msg) {
+  const el = document.getElementById('v-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function renderVehicleHistory(v) {
+  const wrap = document.getElementById('vehicle-history');
+  const tbody = document.getElementById('vehicle-history-tbody');
+  const emptyEl = document.getElementById('vehicle-history-empty');
+  if (!v) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  tbody.innerHTML = '';
+  const STATUS_LABEL = { planned: 'Suplanuota', done: 'Baigta', needs_entry: 'Reikia suvedimo', needs_wash: 'Reikia plovimo' };
+  const jobs = jobsForPlate(v.plate);
+  emptyEl.style.display = jobs.length ? 'none' : '';
+  jobs.forEach(ev => {
+    const tr = document.createElement('tr');
+    const dateTd = document.createElement('td');
+    dateTd.textContent = formatShortDate(parseIso(ev.dateFrom));
+    const descTd = document.createElement('td');
+    descTd.textContent = ev.desc || '—';
+    const sumTd = document.createElement('td');
+    sumTd.textContent = moneyFmt(calcJobTotal(ev).totalVat) + ' €';
+    const statusTd = document.createElement('td');
+    const pill = document.createElement('span');
+    const vhStatus = ev.status || 'planned';
+    pill.className = 'status-pill ' + vhStatus;
+    const vhStatusBaseLabel = STATUS_LABEL[vhStatus] || ev.status;
+    pill.textContent = (vhStatus !== 'planned' && ev.statusNote) ? vhStatusBaseLabel + ' (' + ev.statusNote + ')' : vhStatusBaseLabel;
+    statusTd.appendChild(pill);
+    tr.appendChild(dateTd); tr.appendChild(descTd); tr.appendChild(sumTd); tr.appendChild(statusTd);
+    tr.addEventListener('click', () => { closeVehicleModal(); openEditModal(ev.id); });
+    tbody.appendChild(tr);
+  });
+}
+function openNewVehicleModal() {
+  if (READ_ONLY) return;
+  editingVehicleId = null;
+  resetVehiclePhotoState();
+  document.getElementById('vehicle-modal-title').textContent = 'Naujas automobilis';
+  document.getElementById('v-plate').value = '';
+  document.getElementById('v-plate').disabled = false;
+  document.getElementById('v-car').value = '';
+  document.getElementById('v-client').value = '';
+  document.getElementById('v-phone').value = '';
+  document.getElementById('v-error').style.display = 'none';
+  document.getElementById('v-btn-delete').style.display = 'none';
+  showVehiclePhotoPreview(null);
+  renderVehicleHistory(null);
+  document.getElementById('vehicle-overlay').classList.remove('hidden');
+  document.getElementById('v-plate').focus();
+}
+function openEditVehicleModal(id) {
+  const v = vehicles.find(x => x.id === id);
+  if (!v) return;
+  editingVehicleId = id;
+  resetVehiclePhotoState();
+  document.getElementById('vehicle-modal-title').textContent = READ_ONLY ? 'Automobilis (tik peržiūra)' : 'Redaguoti automobilį';
+  document.getElementById('v-plate').value = v.plate || '';
+  document.getElementById('v-car').value = v.car || '';
+  document.getElementById('v-client').value = v.client || '';
+  document.getElementById('v-phone').value = v.phone || '';
+  document.getElementById('v-error').style.display = 'none';
+  document.getElementById('v-btn-delete').style.display = READ_ONLY ? 'none' : '';
+  showVehiclePhotoPreview(v.photoUrl || null);
+  renderVehicleHistory(v);
+  document.getElementById('vehicle-overlay').classList.remove('hidden');
+}
+function closeVehicleModal() {
+  document.getElementById('vehicle-overlay').classList.add('hidden');
+  editingVehicleId = null;
+  resetVehiclePhotoState();
+}
+// Nuotrauka suspaudžiama/sumažinama naršyklėje (canvas), kad nesusidarytų
+// per didelis JSON siunčiamas serveriui — jokios papildomos bibliotekos.
+function readAndCompressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Nepavyko nuskaityti failo.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Netinkamas paveikslėlio failas.'));
+      img.onload = () => {
+        const MAX_DIM = 1000;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          const scale = MAX_DIM / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('v-photo-input').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  try {
+    vehiclePhotoDataUrl = await readAndCompressPhoto(file);
+    vehiclePhotoRemoved = false;
+    showVehiclePhotoPreview(vehiclePhotoDataUrl);
+  } catch (err) {
+    showVehicleErr(err.message);
+  }
+});
+document.getElementById('v-photo-remove').addEventListener('click', () => {
+  vehiclePhotoDataUrl = null;
+  vehiclePhotoRemoved = true;
+  document.getElementById('v-photo-input').value = '';
+  showVehiclePhotoPreview(null);
+});
+async function saveVehicleModal() {
+  const plate = document.getElementById('v-plate').value.trim();
+  const car = document.getElementById('v-car').value.trim();
+  const client = document.getElementById('v-client').value.trim();
+  const phone = document.getElementById('v-phone').value.trim();
+  if (!plate) { showVehicleErr('Įveskite valstybinį numerį.'); return; }
+  document.getElementById('v-error').style.display = 'none';
+
+  const payload = { plate, car, client, phone };
+  if (vehiclePhotoDataUrl) payload.photo = vehiclePhotoDataUrl;
+  if (vehiclePhotoRemoved) payload.removePhoto = true;
+
+  const saveBtn = document.getElementById('v-btn-save');
+  saveBtn.disabled = true;
+  try {
+    let saved;
+    if (editingVehicleId) {
+      saved = await apiFetch('/api/vehicles/' + editingVehicleId, { method: 'PUT', body: JSON.stringify(payload) });
+      const idx = vehicles.findIndex(v => v.id === editingVehicleId);
+      if (idx !== -1) vehicles[idx] = saved;
+    } else {
+      saved = await apiFetch('/api/vehicles', { method: 'POST', body: JSON.stringify(payload) });
+      vehicles.push(saved);
+    }
+    refreshPlateSuggestions();
+    closeVehicleModal();
+    render();
+  } catch (err) {
+    showVehicleErr(err.message);
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+async function deleteVehicleModal() {
+  if (!editingVehicleId) return;
+  const id = editingVehicleId;
+  const idx = vehicles.findIndex(v => v.id === id);
+  if (idx === -1) return;
+  const removed = vehicles[idx];
+  vehicles.splice(idx, 1);
+  refreshPlateSuggestions();
+  closeVehicleModal();
+  render();
+  // Darbų istorija (žr. jobsForPlate()) nepriklauso nuo šio įrašo — ji lieka
+  // nepakitusi tiek anuliavus, tiek faktiškai ištrynus.
+  showUndoToast('Automobilis ištrintas.', () => {
+    vehicles.push(removed);
+    refreshPlateSuggestions();
+    render();
+  }, async () => {
+    try {
+      await apiFetch('/api/vehicles/' + id, { method: 'DELETE' });
+    } catch (err) {
+      vehicles.push(removed);
+      refreshPlateSuggestions();
+      render();
+      alert('Nepavyko ištrinti automobilio: ' + err.message);
+    }
+  });
+}
+document.getElementById('v-btn-save').addEventListener('click', saveVehicleModal);
+document.getElementById('v-btn-cancel').addEventListener('click', closeVehicleModal);
+document.getElementById('v-btn-delete').addEventListener('click', deleteVehicleModal);
+document.getElementById('vehicle-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('vehicle-overlay')) closeVehicleModal();
+});
+document.getElementById('btn-vehicles-new').addEventListener('click', openNewVehicleModal);
+// Valstybinio nr. laukelyje pildant naują/redaguojant darbą — jei įvestas
+// tekstas tiksliai sutampa su jau žinomu automobiliu, likę laukai
+// (automobilis, klientas, telefonas) užpildomi automatiškai.
+document.getElementById('f-plate').addEventListener('input', e => {
+  const v = vehicleByPlate(e.target.value);
+  if (!v) return;
+  document.getElementById('f-car').value = v.car || '';
+  document.getElementById('f-client').value = v.client || '';
+  document.getElementById('f-phone').value = v.phone || '';
+});
 
 function buildHeaderAndGrid() {
   const dates = getViewDates();
@@ -2288,11 +3168,15 @@ function renderEvents() {
       if (horizon > to) to = horizon;
     }
     // Kelių dienų darbas (dateFrom !== dateTo, ne "laukiantys"): kėlimo
-    // stovas juo užimtas VISĄ DIENĄ kiekvieną tarpinę/pirmąją dieną, todėl
-    // rodomas per visą darbo dieną (07:00–18:00). Tik PASKUTINĘ dieną
-    // (dateTo) rodomas nuo darbo dienos pradžios iki tikrojo ev.end.
-    // Realus ev.start/ev.end (pvz. „pirmadienį nuo 8:00") lieka nepakitęs
-    // duomenyse — keičiasi tik vaizdavimas kalendoriuje.
+    // stovas juo užimtas PIRMĄ DIENĄ nuo tikrojo ev.start iki dienos
+    // pabaigos, kiekvieną TARPINĘ dieną — visą darbo dieną (07:00–18:00),
+    // o PASKUTINĘ dieną (dateTo) — nuo darbo dienos pradžios iki tikrojo
+    // ev.end. Pvz. „pirmadienį nuo 8:00 iki trečiadienio 15:00" rodoma:
+    // pirmadienį 8:00–18:00, antradienį visą dieną, trečiadienį 07:00–15:00.
+    // Realus ev.start/ev.end duomenyse nepakitęs — keičiasi tik vaizdavimas
+    // kalendoriuje. Vilkimą pratęsti/sutrumpinti (žr. updateResizeDrag())
+    // tai neriboja — resize'inant pirmą/paskutinę dieną, tas pats ev.start/
+    // ev.end laukas toliau keičiamas kaip įprasta.
     const isMultiDay = !waiting && dateTo0 !== ev.dateFrom;
     dates.forEach(d => {
       if (d >= from && d <= to) {
@@ -2301,8 +3185,9 @@ function renderEvents() {
         if (!colEventsMap[key]) colEventsMap[key] = [];
         let ss, se;
         if (isMultiDay) {
+          const isFirstDay = ds === ev.dateFrom;
           const isLastDay = ds === dateTo0;
-          ss = WAITING_SLOTS;
+          ss = isFirstDay ? timeToSlot(ev.start) : WAITING_SLOTS;
           se = isLastDay ? computeEffectiveEndSlot(ev, ds) : SLOT_COUNT;
         } else {
           ss = timeToSlot(ev.start);
@@ -2415,13 +3300,26 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   timeEl.className = 'event-time';
   timeEl.textContent = ev.start + '–' + ev.end;
 
+  // Valstybinis nr. rodomas ryškiau (paryškintas, šviesesnis) nei klientas IR
+  // pirmas eilutėje — siaurose (persidengiančiose) kortelėse pritrūkus vietos
+  // nupjaunamas klientas, o ne pats svarbiausias atpažinimo požymis (valst.
+  // nr.), dirbant prie kelto.
   const carEl = document.createElement('div');
   carEl.className = 'event-car';
-  carEl.textContent = escHtml([ev.client, ev.plate].filter(Boolean).join(' · '));
+  const clientPart = ev.client ? escHtml(ev.client) : '';
+  const platePart = ev.plate ? '<span class="event-plate">' + escHtml(ev.plate) + '</span>' : '';
+  carEl.innerHTML = [platePart, clientPart].filter(Boolean).join(' · ');
+
+  // Darbų aprašymas — trumpai rodomas ir pačioje kortelėje (ne tik atidarius
+  // langą), kad iš karto matytųsi, kas turi būti atlikta.
+  const descEl = document.createElement('div');
+  descEl.className = 'event-desc';
+  descEl.textContent = ev.desc || '';
 
   card.appendChild(titleEl);
   if (height >= 30) card.appendChild(timeEl);
   if (height >= 46) card.appendChild(carEl);
+  if (height >= 74 && ev.desc) card.appendChild(descEl);
 
   card.title = [
     ev.car,
@@ -2429,27 +3327,46 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
     ev.client,
     ev.phone ? 'Tel.: ' + ev.phone : null,
     ev.start+'–'+ev.end,
-    ev.desc
+    ev.desc,
+    (ev.status && ev.status !== 'planned' && ev.statusNote) ? 'Pastaba: ' + ev.statusNote : null
   ].filter(Boolean).join('\n') +
     (READ_ONLY ? '' : '\n\n(Vilkite – perkelti. Vilkite kraštą – keisti trukmę.)');
 
   // Move (drag whole card) — click without movement opens the edit modal
   card.addEventListener('mousedown', e => onCardMousedown(e, ev));
+  // Telefone/planšetėje: ilgas prispaudimas aktyvuoja tą patį vilkimą,
+  // trumpas bakstelėjimas — atidaro redagavimo langą (žr. attachLongPress).
+  attachLongPress(card, (x, y) => {
+    if (READ_ONLY) { openEditModal(ev.id); return; }
+    beginCardDrag(x, y, colDiv, ev);
+  }, () => openEditModal(ev.id));
 
-  if (!READ_ONLY && !multiDay) {
-    // Resize handles (top = change start, bottom = change end). Neteikiama
-    // kelių dienų darbams — jų kortelė kai kuriomis dienomis rodoma per
-    // visą dieną (nesutampa su tikru ev.start/ev.end), tad vilkimas
-    // valandos ribos neturėtų aiškios reikšmės; valandas keisti reikia
-    // per redagavimo langą.
-    const handleTop = document.createElement('div');
-    handleTop.className = 'resize-handle resize-top';
-    handleTop.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'top'));
-    const handleBottom = document.createElement('div');
-    handleBottom.className = 'resize-handle resize-bottom';
-    handleBottom.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'bottom'));
-    card.appendChild(handleTop);
-    card.appendChild(handleBottom);
+  if (!READ_ONLY) {
+    // Resize handles (top = keisti pradžią, bottom = keisti pabaigą).
+    // Vienos dienos darbui rodomi abu kraštai. Kelių dienų darbui kraštas
+    // turi aiškią reikšmę tik ten, kur kortelė iš tikrųjų atitinka tikrą
+    // ev.start/ev.end: viršutinis kraštas — tik PIRMOS dienos kortelėje,
+    // apatinis — tik PASKUTINĖS dienos kortelėje. Tarpinėse dienose (kortelė
+    // per visą dieną, jokios realios ribos) kraštų nerodome.
+    const dateTo0m = ev.dateTo || ev.dateFrom;
+    const isFirstDayCard = multiDay && colDateStr === ev.dateFrom;
+    const isLastDayCard = multiDay && colDateStr === dateTo0m;
+    const showTop = !multiDay || isFirstDayCard;
+    const showBottom = !multiDay || isLastDayCard;
+    if (showTop) {
+      const handleTop = document.createElement('div');
+      handleTop.className = 'resize-handle resize-top';
+      handleTop.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'top'));
+      attachLongPress(handleTop, (x, y) => beginResizeDrag(x, y, colDiv, ev, 'top'), null);
+      card.appendChild(handleTop);
+    }
+    if (showBottom) {
+      const handleBottom = document.createElement('div');
+      handleBottom.className = 'resize-handle resize-bottom';
+      handleBottom.addEventListener('mousedown', e => onResizeMousedown(e, ev, 'bottom'));
+      attachLongPress(handleBottom, (x, y) => beginResizeDrag(x, y, colDiv, ev, 'bottom'), null);
+      card.appendChild(handleBottom);
+    }
   }
 
   return card;
@@ -2591,14 +3508,30 @@ function formatShortDate(d) {
   return d.getDate() + '.' + String(d.getMonth()+1).padStart(2,'0');
 }
 
-function onCardMousedown(e, ev) {
-  if (e.button !== 0) return;
-  e.preventDefault();
-  e.stopPropagation();
-  if (READ_ONLY) { openEditModal(ev.id); return; }
-  const colDiv = e.currentTarget.closest('.grid-col');
+// Pridėti/nuimti klausytojus, kurie tęsia jau pradėtą vilkimą (kortelės
+// perkėlimą ar krašto tempimą) — VISADA ir pelės, ir jutiklinio ekrano
+// (touch), nepriklausomai nuo to, kuriuo įrenginiu vilkimas buvo pradėtas.
+// Neaktyvaus tipo klausytojai tiesiog niekada neįsijungia, tad tai saugu.
+function attachDragListeners() {
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchmove', onDragTouchMove, { passive: false });
+  document.addEventListener('touchend', onDragTouchEnd);
+  document.addEventListener('touchcancel', onDragTouchEnd);
+  evDrag.edgeInterval = setInterval(edgeNavCheck, 180);
+}
+function detachDragListeners() {
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  document.removeEventListener('touchmove', onDragTouchMove);
+  document.removeEventListener('touchend', onDragTouchEnd);
+  document.removeEventListener('touchcancel', onDragTouchEnd);
+  if (evDrag && evDrag.edgeInterval) clearInterval(evDrag.edgeInterval);
+}
+
+function beginCardDrag(clientX, clientY, colDiv, ev) {
   const rect = colDiv.getBoundingClientRect();
-  const relY = e.clientY - rect.top;
+  const relY = clientY - rect.top;
   const grabSlot = Math.floor(relY / 48);
   const slotStart0 = timeToSlot(ev.start);
   const slotEnd0 = timeToSlot(ev.end);
@@ -2607,10 +3540,10 @@ function onCardMousedown(e, ev) {
   evDrag = {
     mode: 'move',
     ev,
-    startClientX: e.clientX,
-    startClientY: e.clientY,
-    lastClientX: e.clientX,
-    lastClientY: e.clientY,
+    startClientX: clientX,
+    startClientY: clientY,
+    lastClientX: clientX,
+    lastClientY: clientY,
     moved: false,
     grabOffsetSlots: grabSlot - slotStart0,
     duration: slotEnd0 - slotStart0,
@@ -2637,10 +3570,53 @@ function onCardMousedown(e, ev) {
     curColDiv: colDiv,
     edgeTicks: 0,
   };
+  attachDragListeners();
+}
 
-  document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('mouseup', onDragEnd);
-  evDrag.edgeInterval = setInterval(edgeNavCheck, 180);
+function beginResizeDrag(clientX, clientY, colDiv, ev, edge) {
+  const colDateStr = colDiv.dataset.date;
+  const dateTo0 = ev.dateTo || ev.dateFrom;
+  const isMultiDay = dateTo0 !== ev.dateFrom;
+  const isFirstDayCard = isMultiDay && colDateStr === ev.dateFrom;
+  const isLastDayCard = isMultiDay && colDateStr === dateTo0;
+  // Kelių dienų darbo kortelė tarpinėse/pirmoje dienose vaizduojama iki
+  // dienos pabaigos (SLOT_COUNT), o paskutinėje — nuo dienos pradžios
+  // (WAITING_SLOTS) — žr. renderEvents(). "Fiksuoto" krašto pradinė
+  // reikšmė (tas, kurio šis vilkimas nekeičia) turi atitikti tai, kas
+  // realiai matoma ekrane, kitaip vaiduoklis „šoktų" per vilkimą.
+  const slotStart0 = isFirstDayCard ? timeToSlot(ev.start) : (isMultiDay ? WAITING_SLOTS : timeToSlot(ev.start));
+  const slotEnd0 = isLastDayCard ? timeToSlot(ev.end) : (isMultiDay ? SLOT_COUNT : timeToSlot(ev.end));
+  evDrag = {
+    mode: edge === 'top' ? 'resize-top' : 'resize-bottom',
+    ev,
+    startClientX: clientX,
+    startClientY: clientY,
+    lastClientX: clientX,
+    lastClientY: clientY,
+    moved: false,
+    colDiv,
+    curLift: ev.lift,
+    curDateFrom: ev.dateFrom,
+    curDateTo: dateTo0,
+    curSlotStart: slotStart0,
+    curSlotEnd: slotEnd0,
+    // Kelių dienų darbui vilkimas keičia TIK tą lauką, kurio kraštas
+    // tempiamas (start pirmos dienos viršuje, end paskutinės dienos
+    // apačioje) — kitas laukas NEsiunčiamas į serverį, nes jo "fiksuota"
+    // vertė aukščiau (SLOT_COUNT/WAITING_SLOTS) yra tik vaizdinė, o ne
+    // tikras ev.start/ev.end (žr. onDragEnd()).
+    isMultiDayEdge: isMultiDay,
+  };
+  attachDragListeners();
+}
+
+function onCardMousedown(e, ev) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (READ_ONLY) { openEditModal(ev.id); return; }
+  const colDiv = e.currentTarget.closest('.grid-col');
+  beginCardDrag(e.clientX, e.clientY, colDiv, ev);
 }
 
 function onResizeMousedown(e, ev, edge) {
@@ -2649,39 +3625,109 @@ function onResizeMousedown(e, ev, edge) {
   e.preventDefault();
   e.stopPropagation();
   const colDiv = e.currentTarget.closest('.grid-col');
-  const slotStart0 = timeToSlot(ev.start);
-  const slotEnd0 = timeToSlot(ev.end);
-  evDrag = {
-    mode: edge === 'top' ? 'resize-top' : 'resize-bottom',
-    ev,
-    startClientX: e.clientX,
-    startClientY: e.clientY,
-    lastClientX: e.clientX,
-    lastClientY: e.clientY,
-    moved: false,
-    colDiv,
-    curLift: ev.lift,
-    curDateFrom: ev.dateFrom,
-    curDateTo: ev.dateTo || ev.dateFrom,
-    curSlotStart: slotStart0,
-    curSlotEnd: slotEnd0,
-  };
-  document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('mouseup', onDragEnd);
+  beginResizeDrag(e.clientX, e.clientY, colDiv, ev, edge);
+}
+
+/* ── JUTIKLINIO EKRANO (telefono) PALAIKYMAS — ILGAS PRISPAUDIMAS ──
+   Kompiuteryje kortelė vilkstama iškart paspaudus pelę. Telefone taip
+   negalima — braukimas per kalendorių turi likti normaliam slinkimui/dienų
+   keitimui. Todėl reikia ilgo prispaudimo (be reikšmingo piršto judesio),
+   kuris "aktyvuoja" vilkimą — lygiai taip, kaip elgiasi iOS/Android
+   kalendoriaus programėlės. Trumpas prispaudimas be laikymo = paprastas
+   bakstelėjimas (atidaro redagavimo langą). */
+const LONG_PRESS_MS = 420;
+const LONG_PRESS_MOVE_TOLERANCE = 10;
+
+// targetEl — elementas (kortelė arba krašto rankenėlė), ant kurio klausoma.
+// onFire(x, y) kviečiamas patvirtinus ilgą prispaudimą (pirštas vis dar
+// laikomas, beveik nepajudėjęs) — čia pradedamas tikrasis vilkimas.
+// onTap() kviečiamas, jei pirštas pakeliamas ANKSČIAU, nei suveikia laikmatis
+// (paprastas bakstelėjimas). Visuose etapuose sustabdomas įvykio sklidimas
+// (stopPropagation), kad #cal-body lygio dienų-braukimo logika (žr.
+// setupSwipeNav aukščiau) nesumaišytų savo vidinės būsenos su šiuo atskirai
+// valdomu prisilietimu — bet preventDefault NEkviečiamas, kol vilkimas
+// tikrai neaktyvuotas, kad iki tol veiktų įprastas naršyklės slinkimas.
+function attachLongPress(targetEl, onFire, onTap) {
+  targetEl.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+    const t = e.touches[0];
+    const startX = t.clientX, startY = t.clientY;
+    let settled = false;
+
+    function finish() {
+      targetEl.removeEventListener('touchmove', onMove);
+      targetEl.removeEventListener('touchend', onEnd);
+      targetEl.removeEventListener('touchcancel', onCancel);
+      clearTimeout(timer);
+    }
+    function onMove(ev2) {
+      ev2.stopPropagation();
+      if (settled) return;
+      const t2 = ev2.touches[0];
+      if (!t2) return;
+      if (Math.hypot(t2.clientX - startX, t2.clientY - startY) > LONG_PRESS_MOVE_TOLERANCE) {
+        settled = true;
+        finish();
+      }
+    }
+    function onEnd(ev2) {
+      ev2.stopPropagation();
+      if (settled) return;
+      settled = true;
+      finish();
+      if (onTap) onTap();
+    }
+    function onCancel(ev2) {
+      ev2.stopPropagation();
+      settled = true;
+      finish();
+    }
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      finish();
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) { /* ignoruojama */ } }
+      onFire(t.clientX, t.clientY);
+    }, LONG_PRESS_MS);
+
+    targetEl.addEventListener('touchmove', onMove, { passive: true });
+    targetEl.addEventListener('touchend', onEnd);
+    targetEl.addEventListener('touchcancel', onCancel);
+  }, { passive: true });
 }
 
 function onDragMove(e) {
   if (!evDrag) return;
-  const dx = e.clientX - evDrag.startClientX;
-  const dy = e.clientY - evDrag.startClientY;
+  applyDragPosition(e.clientX, e.clientY);
+}
+
+// Tas pats touch atitikmuo — jau AKTYVUOTO vilkimo (po ilgo prispaudimo,
+// žr. attachLongPress aukščiau) tąsa pirštui judant. Nuo šio taško
+// preventDefault jau reikalingas — vilkimas "perima" prisilietimą, įprastas
+// puslapio slinkimas jo metu turi būti sustabdytas.
+function onDragTouchMove(e) {
+  if (!evDrag) return;
+  if (!e.touches || e.touches.length === 0) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  applyDragPosition(t.clientX, t.clientY);
+}
+function onDragTouchEnd() {
+  onDragEnd();
+}
+
+function applyDragPosition(clientX, clientY) {
+  const dx = clientX - evDrag.startClientX;
+  const dy = clientY - evDrag.startClientY;
   if (Math.abs(dx) > 4 || Math.abs(dy) > 4) evDrag.moved = true;
-  evDrag.lastClientX = e.clientX;
-  evDrag.lastClientY = e.clientY;
+  evDrag.lastClientX = clientX;
+  evDrag.lastClientY = clientY;
 
   if (evDrag.mode === 'move') {
-    updateMoveDrag(e.clientX, e.clientY);
+    updateMoveDrag(clientX, clientY);
   } else {
-    updateResizeDrag(e.clientY);
+    updateResizeDrag(clientY);
   }
   renderGhost();
 }
@@ -2754,6 +3800,14 @@ function renderGhost() {
   g.style.left = '2px';
   g.style.right = '2px';
 
+  // Kortelės pavadinimas (automobilis + valst. nr.) rodomas viršuje, ryškiau
+  // — kad vilkstant/tempiant matytųsi, KURIS darbas perstumdomas (originali
+  // kortelė tuo metu pritemdyta, žr. .dragging-source).
+  const carLabel = document.createElement('div');
+  carLabel.className = 'ghost-label ghost-label-car';
+  carLabel.textContent = [evDrag.ev.car, evDrag.ev.plate].filter(Boolean).join(' · ') || 'Darbas';
+  g.appendChild(carLabel);
+
   const label = document.createElement('div');
   label.className = 'ghost-label';
   if (evDrag.mode === 'move') {
@@ -2774,29 +3828,51 @@ function removeGhost() {
 }
 
 function edgeNavCheck() {
-  if (!evDrag || evDrag.mode !== 'move') return;
+  if (!evDrag) return;
   const calBody = document.getElementById('cal-body');
   const rect = calBody.getBoundingClientRect();
-  const x = evDrag.lastClientX;
-  let dir = 0;
-  if (x < rect.left + EDGE_PX) dir = -1;
-  else if (x > rect.right - EDGE_PX) dir = 1;
 
-  if (dir === 0) { evDrag.edgeTicks = 0; return; }
+  // Vertikalus automatinis slinkimas (žemyn/aukštyn), kai vilkstant (ar
+  // tempiant kraštą) atsiduriama arti matomos srities viršaus/apačios —
+  // kad būtų galima pasiekti žemesnius/aukštesnius laiko langelius, kurie
+  // šiuo metu už matomos srities ribų (žr. DRAG_SCROLL_EDGE_PX aukščiau —
+  // ta pati logika, kaip naujo įrašo žymėjimui tempiant tuščią langelį).
+  // Galioja tiek kortelės perkėlimui (move), tiek krašto tempimui (resize).
+  const y = evDrag.lastClientY;
+  let vDir = 0;
+  if (y > rect.bottom - DRAG_SCROLL_EDGE_PX) vDir = 1;
+  else if (y < rect.top + DRAG_SCROLL_EDGE_PX) vDir = -1;
+  if (vDir !== 0) {
+    const prevScrollTop = calBody.scrollTop;
+    calBody.scrollTop += vDir * DRAG_SCROLL_STEP;
+    if (calBody.scrollTop !== prevScrollTop) {
+      if (evDrag.mode === 'move') updateMoveDrag(evDrag.lastClientX, evDrag.lastClientY);
+      else updateResizeDrag(evDrag.lastClientY);
+      renderGhost();
+    }
+  }
+
+  // Horizontalus automatinis navigavimas (kita diena) — tik kortelės
+  // perkėlimui; krašto tempimas datos nekeičia, tad jam nereikalingas.
+  if (evDrag.mode !== 'move') return;
+  const x = evDrag.lastClientX;
+  let hDir = 0;
+  if (x < rect.left + EDGE_PX) hDir = -1;
+  else if (x > rect.right - EDGE_PX) hDir = 1;
+
+  if (hDir === 0) { evDrag.edgeTicks = 0; return; }
   evDrag.edgeTicks++;
   if (evDrag.edgeTicks >= EDGE_TICKS) {
     evDrag.edgeTicks = 0;
-    navigate(dir);
+    navigate(hDir);
     updateMoveDrag(evDrag.lastClientX, evDrag.lastClientY);
     renderGhost();
   }
 }
 
-function onDragEnd(e) {
+function onDragEnd() {
   if (!evDrag) return;
-  document.removeEventListener('mousemove', onDragMove);
-  document.removeEventListener('mouseup', onDragEnd);
-  if (evDrag.edgeInterval) clearInterval(evDrag.edgeInterval);
+  detachDragListeners();
   removeGhost();
   document.querySelectorAll('.dragging-source').forEach(c => c.classList.remove('dragging-source'));
 
@@ -2813,10 +3889,18 @@ function onDragEnd(e) {
   const idx = events.findIndex(x => x.id === ev.id);
   if (idx === -1) { evDrag = null; render(); return; }
 
-  const patch = {
-    start: slotToTime(evDrag.curSlotStart),
-    end: slotToTime(evDrag.curSlotEnd),
-  };
+  const patch = {};
+  if (evDrag.isMultiDayEdge) {
+    // Kelių dienų darbo krašto vilkimas — siunčiamas TIK tas laukas, kurio
+    // kraštas tempiamas; kitas laukas (kurio "fiksuota" vaizdinė vertė buvo
+    // tik dienos riba, ne tikras laikas) į serverį nesiunčiamas, kad
+    // neperrašytų teisingos reikšmės kitoje dienoje (žr. onResizeMousedown()).
+    if (mode === 'resize-top') patch.start = slotToTime(evDrag.curSlotStart);
+    else patch.end = slotToTime(evDrag.curSlotEnd);
+  } else {
+    patch.start = slotToTime(evDrag.curSlotStart);
+    patch.end = slotToTime(evDrag.curSlotEnd);
+  }
   if (mode === 'move') {
     patch.lift = evDrag.curLift;
     patch.dateFrom = evDrag.curDateFrom;
@@ -2870,12 +3954,13 @@ function setModalStatusUI(status) {
 // aktyvūs — tai vienintelis dalykas, kurį jie gali keisti (serveris tai
 // papildomai užtikrina, žr. isReadOnly() / server.js PUT patikrą).
 function setModalReadOnlyUI(readOnly) {
-  ['f-lift','f-client','f-car','f-plate','f-phone','f-date-from','f-date-to','f-start','f-end','f-desc'].forEach(id => {
+  ['f-lift','f-client','f-car','f-plate','f-phone','f-mileage','f-date-from','f-date-to','f-start','f-end','f-desc','f-show-in-jobs'].forEach(id => {
     document.getElementById(id).disabled = readOnly;
   });
   if (readOnly) {
     document.getElementById('btn-save').style.display = 'none';
     document.getElementById('btn-delete').style.display = 'none';
+    document.getElementById('btn-duplicate').style.display = 'none';
     document.getElementById('btn-cancel').textContent = 'Uždaryti';
   } else {
     document.getElementById('btn-save').style.display = '';
@@ -2897,7 +3982,12 @@ async function setEventStatus(status) {
   setModalStatusUI(status);
   if (!editingId) return;
   try {
-    const patch = { status };
+    const noteInput = document.getElementById('f-status-note');
+    // Pastaba skliausteliuose pridedama prie būsenos tik pažymint darbą
+    // baigtu/reikalaujantį dėmesio — ją reikia įvesti PRIEŠ paspaudžiant
+    // mygtuką. Grąžinant į "suplanuota" pastabą išvalome (nebeaktuali).
+    const patch = { status, statusNote: status === 'planned' ? '' : noteInput.value.trim() };
+    if (status === 'planned') noteInput.value = '';
     // Pažymint darbą baigtu / reikalaujantį dėmesio, kuris tuo metu buvo
     // laikomas vykdomu (jau prasidėjęs šiandien) ir spėjo pasiilginti už
     // suplanuoto laiko — užfiksuojame realų pabaigos laiką, kad kortelė
@@ -2928,22 +4018,46 @@ document.getElementById('btn-status-needs-entry').addEventListener('click', () =
 document.getElementById('btn-status-needs-wash').addEventListener('click', () => setEventStatus('needs_wash'));
 document.getElementById('btn-status-undo').addEventListener('click', () => setEventStatus('planned'));
 
+// Pakeitus "Pradžią", automatiškai pastumiame "Pabaigą" ta pačia trukme
+// (pvz. 9:00–10:00 -> pradžią pakeitus į 11:00, pabaiga tampa 12:00).
+// Galioja tik vienos dienos darbui — kelių dienų darbo pradžia ir pabaiga
+// yra skirtingose dienose, tad "ta pati trukmė" pusvalandžio tarpsniais
+// neturėtų aiškios reikšmės (tokiam darbui pabaigą reikia keisti atskirai).
+document.getElementById('f-start').addEventListener('change', () => {
+  const newStartSlot = timeToSlot(document.getElementById('f-start').value);
+  const dateFrom = document.getElementById('f-date-from').value;
+  const dateTo = document.getElementById('f-date-to').value || dateFrom;
+  if (dateFrom === dateTo && modalPrevStartSlot !== null) {
+    const endSel = document.getElementById('f-end');
+    let duration = timeToSlot(endSel.value) - modalPrevStartSlot;
+    if (duration <= 0) duration = 2; // apsauga: jei anksčiau jau buvo neteisinga (pabaiga <= pradžia) būsena, laikome 1 val.
+    const newEndSlot = Math.min(SLOT_COUNT, Math.max(newStartSlot + 1, newStartSlot + duration));
+    endSel.value = slotToTime(newEndSlot);
+  }
+  modalPrevStartSlot = newStartSlot;
+});
+
 function openNewModal(dateStr, liftId, startT, endT) {
   if (READ_ONLY) return;
   editingId = null;
   document.getElementById('modal-title').textContent = 'Naujas darbas';
   document.getElementById('btn-delete').style.display = 'none';
+  document.getElementById('btn-duplicate').style.display = 'none';
   populateLiftSelect();
   document.getElementById('f-lift').value = liftId;
   document.getElementById('f-car').value = '';
   document.getElementById('f-plate').value = '';
+  document.getElementById('f-mileage').value = '';
   document.getElementById('f-phone').value = '';
   document.getElementById('f-client').value = '';
   document.getElementById('f-date-from').value = dateStr;
   document.getElementById('f-date-to').value = dateStr;
   document.getElementById('f-start').value = startT;
   document.getElementById('f-end').value = endT;
+  document.getElementById('f-show-in-jobs').checked = true;
+  modalPrevStartSlot = timeToSlot(startT);
   document.getElementById('f-desc').value = '';
+  document.getElementById('f-status-note').value = '';
   document.getElementById('f-error').style.display = 'none';
   setModalStatusUI('planned');
   setModalReadOnlyUI(false);
@@ -2957,17 +4071,24 @@ function openEditModal(id) {
   editingId = id;
   document.getElementById('modal-title').textContent = READ_ONLY ? 'Darbo informacija (tik peržiūra)' : 'Redaguoti darbą';
   document.getElementById('btn-delete').style.display = READ_ONLY ? 'none' : '';
+  document.getElementById('btn-duplicate').style.display = READ_ONLY ? 'none' : '';
   populateLiftSelect();
   document.getElementById('f-lift').value = ev.lift;
   document.getElementById('f-car').value = ev.car || '';
   document.getElementById('f-plate').value = ev.plate || '';
+  document.getElementById('f-mileage').value = ev.mileage || '';
   document.getElementById('f-phone').value = ev.phone || '';
   document.getElementById('f-client').value = ev.client || '';
   document.getElementById('f-date-from').value = ev.dateFrom;
   document.getElementById('f-date-to').value = ev.dateTo || ev.dateFrom;
   document.getElementById('f-start').value = ev.start;
   document.getElementById('f-end').value = ev.end;
+  // Senesni įrašai (sukurti prieš atsirandant šiam pasirinkimui) lauko
+  // neturi — laikome, kad jie rodomi Darbų valdyme, kaip ir anksčiau.
+  document.getElementById('f-show-in-jobs').checked = ev.showInJobs !== false;
+  modalPrevStartSlot = timeToSlot(ev.start);
   document.getElementById('f-desc').value = ev.desc || '';
+  document.getElementById('f-status-note').value = ev.statusNote || '';
   document.getElementById('f-error').style.display = 'none';
   setModalStatusUI(ev.status || 'planned');
   setModalReadOnlyUI(READ_ONLY);
@@ -2983,6 +4104,7 @@ async function saveModal() {
   const lift = document.getElementById('f-lift').value;
   const car = document.getElementById('f-car').value.trim();
   const plate = document.getElementById('f-plate').value.trim();
+  const mileage = document.getElementById('f-mileage').value.trim();
   const phone = document.getElementById('f-phone').value.trim();
   const client = document.getElementById('f-client').value.trim();
   const dateFrom = document.getElementById('f-date-from').value;
@@ -2990,6 +4112,8 @@ async function saveModal() {
   const start = document.getElementById('f-start').value;
   const end = document.getElementById('f-end').value;
   const desc = document.getElementById('f-desc').value.trim();
+  const statusNote = modalStatus === 'planned' ? '' : document.getElementById('f-status-note').value.trim();
+  const showInJobs = document.getElementById('f-show-in-jobs').checked;
   const errEl = document.getElementById('f-error');
 
   if (!dateFrom) { showErr('Pasirinkite datą.'); return; }
@@ -3000,7 +4124,7 @@ async function saveModal() {
   if (dateTo < dateFrom) { showErr('Data „iki" negali būti ankstesnė nei data „nuo".'); return; }
   errEl.style.display = 'none';
 
-  const evData = { lift, client, car, plate, phone, dateFrom, dateTo, start, end, desc, status: modalStatus };
+  const evData = { lift, client, car, plate, mileage, phone, dateFrom, dateTo, start, end, desc, status: modalStatus, statusNote, showInJobs };
   const saveBtn = document.getElementById('btn-save');
   saveBtn.disabled = true;
   try {
@@ -3012,6 +4136,15 @@ async function saveModal() {
       const created = await apiFetch('/api/events', { method: 'POST', body: JSON.stringify(evData) });
       events.push(created);
     }
+    // Jei įrašas turi valstybinį numerį, serveris galėjo automatiškai sukurti
+    // arba susieti automobilio įrašą — atsinaujiname iškart, kad Automobiliai
+    // skirtukas ir valst. nr. pasiūlymai nelauktų kito apklausos ciklo (6s).
+    if (plate && !READ_ONLY) {
+      try {
+        vehicles = await apiFetch('/api/vehicles');
+        refreshPlateSuggestions();
+      } catch (e) { /* tylu — kitas poll ciklas pabandys vėl */ }
+    }
     closeModal();
     render();
   } catch (err) {
@@ -3021,17 +4154,104 @@ async function saveModal() {
   }
 }
 
+/* ── "ANULIUOTI IŠTRYNIMĄ" PRANEŠIMAS ──
+   Ištrynus įrašą (darbą arba automobilį), jis iškart dingsta iš sąrašo
+   (kad veiktų greitai), BET faktiškai serveryje dar NEIŠTRINAMAS — tik po
+   UNDO_DELAY_MS, jei vartotojas per tą laiką nepaspaudžia "Anuliuoti". Taip
+   ištrynimą galima saugiai atšaukti (visiškai nesikreipiant į serverį), o
+   kitiems vartotojams (kitiems darbuotojams, kurie tuo metu gali matyti tą
+   patį įrašą) niekas nepasikeičia, kol laukiama — apklausa (pollEvents)
+   tuo metu sustabdyta, žr. isUserBusy(). */
+const UNDO_DELAY_MS = 10000;
+
+function showUndoToast(message, onUndo, onCommit) {
+  // Jei jau laukia ankstesnis ištrynimas — iškart jį patvirtiname (realiai
+  // ištriname), kad rodomas būtų tik vienas anuliavimo langas vienu metu.
+  commitPendingUndo();
+  document.getElementById('undo-toast-msg').textContent = message;
+  document.getElementById('undo-toast').classList.remove('hidden');
+  const timer = setTimeout(commitPendingUndo, UNDO_DELAY_MS);
+  pendingUndo = { timer, onUndo, onCommit };
+}
+function commitPendingUndo() {
+  if (!pendingUndo) return;
+  const p = pendingUndo;
+  pendingUndo = null;
+  clearTimeout(p.timer);
+  document.getElementById('undo-toast').classList.add('hidden');
+  p.onCommit();
+}
+document.getElementById('undo-toast-btn').addEventListener('click', () => {
+  if (!pendingUndo) return;
+  const p = pendingUndo;
+  pendingUndo = null;
+  clearTimeout(p.timer);
+  document.getElementById('undo-toast').classList.add('hidden');
+  p.onUndo();
+});
+
 async function deleteEvent() {
   if (!editingId) return;
-  if (!confirm('Tikrai ištrinti šį įrašą?')) return;
   const id = editingId;
+  const idx = events.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  const removed = events[idx];
+  events.splice(idx, 1);
+  closeModal();
+  render();
+  showUndoToast('Darbas ištrintas.', () => {
+    // Anuliuota — grąžiname atgal į sąrašą, į serverį net nesikreipėme.
+    events.push(removed);
+    render();
+  }, async () => {
+    // Laikas išbėgo (arba pradėtas kitas ištrynimas) — ištriname realiai.
+    try {
+      await apiFetch('/api/events/' + id, { method: 'DELETE' });
+    } catch (err) {
+      // Nepavyko — grąžiname atgal, kad duomenys nedingtų be pėdsako.
+      events.push(removed);
+      render();
+      alert('Nepavyko ištrinti įrašo: ' + err.message);
+    }
+  });
+}
+
+// Sukuria esamo darbo kopiją (naują įrašą) su tomis pačiomis pagrindinėmis
+// reikšmėmis (keltuvas, automobilis, valst. nr., klientas, laikas ir t.t.),
+// bet BŪSENA visada grąžinama į "suplanuota" (be pastabos) — dubliuojant
+// baigtą darbą, kopija juk dar nepradėta. Dalys/atlikti darbai, apmokėjimas
+// ir archyvo žymė taip pat nekopijuojami — tai vykdymo/atsiskaitymo
+// duomenys, priklausantys konkrečiam kartui, o ne naujai kopijai. Sukūrus,
+// naujas įrašas iškart atidaromas redagavimui, kad būtų patogu iš karto
+// pakoreguoti automobilį/laiką/dieną.
+async function duplicateJob() {
+  if (!editingId || READ_ONLY) return;
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  const payload = {
+    lift: ev.lift,
+    client: ev.client || '',
+    car: ev.car || '',
+    plate: ev.plate || '',
+    phone: ev.phone || '',
+    mileage: ev.mileage || '',
+    dateFrom: ev.dateFrom,
+    dateTo: ev.dateTo || ev.dateFrom,
+    start: ev.start,
+    end: ev.end,
+    desc: ev.desc || '',
+    status: 'planned',
+    statusNote: '',
+    showInJobs: ev.showInJobs !== false,
+  };
   try {
-    await apiFetch('/api/events/' + id, { method: 'DELETE' });
-    events = events.filter(e => e.id !== id);
+    const created = await apiFetch('/api/events', { method: 'POST', body: JSON.stringify(payload) });
+    events.push(created);
     closeModal();
     render();
+    openEditModal(created.id);
   } catch (err) {
-    showErr(err.message);
+    showErr('Nepavyko dubliuoti: ' + err.message);
   }
 }
 
@@ -3120,13 +4340,13 @@ document.getElementById('jobs-status-filter').addEventListener('change', e => {
   jobsStatusFilter = e.target.value;
   renderJobsPage();
 });
+document.getElementById('jobs-show-archived').addEventListener('change', e => {
+  jobsShowArchived = e.target.checked;
+  renderJobsPage();
+});
 document.getElementById('btn-jobs-new').addEventListener('click', () => {
   const todayIso = isoDate(dateOnly(new Date()));
   openNewModal(todayIso, VISIBLE_LIFTS[0].id, '07:00', '07:30');
-});
-document.getElementById('clients-search').addEventListener('input', e => {
-  clientsSearch = e.target.value;
-  renderClientsPage();
 });
 document.getElementById('vehicles-search').addEventListener('input', e => {
   vehiclesSearch = e.target.value;
@@ -3136,12 +4356,14 @@ document.getElementById('vehicles-search').addEventListener('input', e => {
 document.getElementById('btn-save').addEventListener('click', saveModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
 document.getElementById('btn-delete').addEventListener('click', deleteEvent);
+document.getElementById('btn-duplicate').addEventListener('click', duplicateJob);
 document.getElementById('overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('overlay')) closeModal();
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal();
+    closeVehicleModal();
     document.getElementById('settings-overlay').classList.add('hidden');
   }
 });
@@ -3241,10 +4463,18 @@ function isUserBusy() {
   if (dragStartSlot !== null) return true;
   if (!document.getElementById('overlay').classList.contains('hidden')) return true;
   if (!document.getElementById('settings-overlay').classList.contains('hidden')) return true;
+  if (!document.getElementById('vehicle-overlay').classList.contains('hidden')) return true;
+  if (!document.getElementById('templates-overlay').classList.contains('hidden')) return true;
+  if (!document.getElementById('template-edit-overlay').classList.contains('hidden')) return true;
   // Kol darbų valdyme išskleistas bent vienas darbo detalių langelis (dalys/
   // atlikti darbai), apklausa nepertraukiama, kad neišsaugoti pakeitimai
   // nebūtų perrašyti serverio duomenimis iš po vartotojo.
   if (expandedJobIds.size > 0) return true;
+  // Kol laukiama, ar vartotojas paspaus "Anuliuoti" po ištrynimo, apklausa
+  // sustabdyta — kitaip serverio duomenys (kuriuose įrašas dar tikrai yra,
+  // nes faktinis DELETE dar neišsiųstas) grąžintų jį atgal į sąrašą per
+  // anksti, dar nespėjus pasibaigti anuliavimo langui.
+  if (pendingUndo) return true;
   return false;
 }
 
@@ -3252,8 +4482,13 @@ async function pollEvents() {
   if (pollInFlight || document.hidden || isUserBusy() || !currentUser) return;
   pollInFlight = true;
   try {
-    const fresh = await apiFetch('/api/events');
-    if (JSON.stringify(fresh) !== JSON.stringify(events)) {
+    const [fresh, freshVehicles] = await Promise.all([
+      apiFetch('/api/events'),
+      READ_ONLY ? Promise.resolve(vehicles) : apiFetch('/api/vehicles'),
+    ]);
+    const vehiclesChanged = JSON.stringify(freshVehicles) !== JSON.stringify(vehicles);
+    if (vehiclesChanged) { vehicles = freshVehicles; refreshPlateSuggestions(); }
+    if (JSON.stringify(fresh) !== JSON.stringify(events) || vehiclesChanged) {
       events = fresh;
       render();
     }
@@ -3286,8 +4521,8 @@ window.addEventListener('focus', () => pollEvents());
       document.getElementById('btn-new').style.display = 'none';
       document.getElementById('btn-jobs-new').style.display = 'none';
       // Alanas/Sigitas/Darius (darbuotojo paskyros) mato tik Kalendorių —
-      // Darbų valdymas, Klientai ir Automobiliai skirti pilnos prieigos
-      // paskyroms (savininkas, priėmėjas).
+      // Darbų valdymas ir Automobiliai skirti pilnos prieigos paskyroms
+      // (savininkas, priėmėjas).
       document.querySelectorAll('.page-tab').forEach(btn => {
         if (btn.dataset.page !== 'calendar') btn.style.display = 'none';
       });
@@ -3303,6 +4538,21 @@ window.addEventListener('focus', () => pollEvents());
     events = [];
     console.error('Nepavyko įkelti įrašų:', err);
     alert('Nepavyko įkelti duomenų iš serverio: ' + err.message);
+  }
+  if (!READ_ONLY) {
+    try {
+      vehicles = await apiFetch('/api/vehicles');
+      refreshPlateSuggestions();
+    } catch (err) {
+      vehicles = [];
+      console.error('Nepavyko įkelti automobilių:', err);
+    }
+    try {
+      templates = await apiFetch('/api/templates');
+    } catch (err) {
+      templates = [];
+      console.error('Nepavyko įkelti šablonų:', err);
+    }
   }
 
   render();
