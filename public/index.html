@@ -744,9 +744,16 @@ main {
   font-size: clamp(10px, 1.1vw, 13px);
   font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
+  /* Numatytoji reikšmė — 1 eilutė (siaura/žema kortelė). Kortelėms, kurios
+     apima kelias laiko juostas (aukštesnės), JS (žr. lineClampsForHeight())
+     padidina eilučių skaičių, kad būtų išnaudota turima vieta ir nereikėtų
+     kirpti teksto ten, kur jam yra vietos. */
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  word-break: break-word;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .event-time {
   font-size: clamp(9px, 1vw, 12px);
@@ -914,6 +921,31 @@ main {
 }
 .form-group select option { background: var(--surface2); }
 .form-group textarea { resize: vertical; min-height: 60px; }
+
+/* Savas datos pasirinkimo langelis (europietiškas DD.MM.YYYY formatas,
+   savaitė nuo pirmadienio, lietuviški pavadinimai) — vietoj naršyklės
+   įgimto <input type=date>, kurio formatą/savaitės pradžią valdo tik
+   naršyklės/OS kalbos nustatymai, ne puslapis. */
+.date-display-input { cursor: pointer; background: var(--surface2); }
+.date-picker-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 300;
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 10px; width: 232px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.date-picker-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.date-picker-header button {
+  background: none; border: none; color: var(--text2); cursor: pointer;
+  font-size: 16px; line-height: 1; padding: 4px 9px; border-radius: 4px;
+}
+.date-picker-header button:hover { background: var(--surface3); color: var(--text); }
+.date-picker-month-label { font-size: 13px; font-weight: 600; color: var(--text); text-transform: capitalize; }
+.date-picker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.date-picker-daylabel { font-size: 11px; color: var(--text3); text-align: center; padding: 4px 0 6px; font-weight: 600; }
+.date-picker-day { font-size: 12.5px; text-align: center; padding: 6px 0; border-radius: 4px; cursor: pointer; color: var(--text2); }
+.date-picker-day:hover { background: var(--surface3); color: var(--text); }
+.date-picker-day.other-month { color: var(--text3); opacity: .45; }
+.date-picker-day.today { box-shadow: inset 0 0 0 1px var(--accent); }
+.date-picker-day.selected { background: var(--accent); color: #fff; font-weight: 600; }
 
 .modal-actions {
   display: flex;
@@ -1334,13 +1366,15 @@ main {
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" style="position:relative">
         <label>Data nuo</label>
-        <input type="date" id="f-date-from">
+        <input type="hidden" id="f-date-from">
+        <input type="text" id="f-date-from-display" class="date-display-input" readonly autocomplete="off" placeholder="DD.MM.YYYY">
       </div>
-      <div class="form-group">
+      <div class="form-group" style="position:relative">
         <label>Data iki (kelioms dienoms)</label>
-        <input type="date" id="f-date-to">
+        <input type="hidden" id="f-date-to">
+        <input type="text" id="f-date-to-display" class="date-display-input" readonly autocomplete="off" placeholder="DD.MM.YYYY">
       </div>
     </div>
     <div class="form-row">
@@ -1587,6 +1621,115 @@ function isoDate(d) {
 function parseIso(s) {
   const [y,m,d] = s.split('-').map(Number);
   return new Date(y, m-1, d);
+}
+
+/* ── Savas datos pasirinkimo langelis (europietiškas formatas, ── */
+/* ── savaitė nuo pirmadienio, lietuviški mėnesių pavadinimai)   ── */
+// Vardininko linksniu (ne kaip esamas LT_MONTHS žemiau, kuris kilmininko
+// linksniu — "12 Sausio" — čia reikia atskiro mėnesio pavadinimo antraštei,
+// pvz. "Rugpjūtis 2026"), ir savaitė nuo pirmadienio (skirtingai nuo esamo
+// LT_DAYS_SHORT, kuris indeksuojamas pagal getDay() 0=sekmadienis).
+const DP_MONTHS = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+const DP_DAYS_SHORT = ['Pr','An','Tr','Kt','Pn','Št','Sk']; // pirmadienis pirmas
+
+function formatDateEU(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return d + '.' + m + '.' + y;
+}
+
+// Nustato paslėpto (tikrojo, YYYY-MM-DD) ir matomo (DD.MM.YYYY) laukų reikšmes kartu.
+function setDateFieldValue(baseId, iso) {
+  const hiddenEl = document.getElementById(baseId);
+  const dispEl = document.getElementById(baseId + '-display');
+  if (hiddenEl) hiddenEl.value = iso || '';
+  if (dispEl) dispEl.value = formatDateEU(iso);
+}
+
+function attachDatePicker(baseId) {
+  const hiddenEl = document.getElementById(baseId);
+  const displayEl = document.getElementById(baseId + '-display');
+  if (!hiddenEl || !displayEl) return;
+  let dropdown = null;
+  let viewYear, viewMonth; // viewMonth: 0-11
+
+  function closeDropdown() {
+    if (!dropdown) return;
+    dropdown.remove();
+    dropdown = null;
+    document.removeEventListener('mousedown', onDocClick, true);
+  }
+  function onDocClick(e) {
+    if (dropdown && !dropdown.contains(e.target) && e.target !== displayEl) closeDropdown();
+  }
+  function renderGrid() {
+    dropdown.querySelector('.date-picker-month-label').textContent = DP_MONTHS[viewMonth] + ' ' + viewYear;
+    const grid = dropdown.querySelector('.date-picker-grid');
+    grid.querySelectorAll('.date-picker-day').forEach(el => el.remove());
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const startOffset = (firstOfMonth.getDay() + 6) % 7; // Pr=0 ... Sk=6
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const todayIso = isoDate(new Date());
+    const selectedIso = hiddenEl.value;
+
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) {
+      const d = addDays(firstOfMonth, i - startOffset);
+      cells.push({ date: d, other: true });
+    }
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ date: new Date(viewYear, viewMonth, d), other: false });
+    while (cells.length < 42) {
+      const last = cells[cells.length - 1].date;
+      cells.push({ date: addDays(last, 1), other: true });
+    }
+
+    const frag = document.createDocumentFragment();
+    cells.forEach(c => {
+      const iso = isoDate(c.date);
+      const el = document.createElement('div');
+      el.className = 'date-picker-day'
+        + (c.other ? ' other-month' : '')
+        + (iso === todayIso ? ' today' : '')
+        + (iso === selectedIso ? ' selected' : '');
+      el.textContent = c.date.getDate();
+      el.addEventListener('click', () => {
+        setDateFieldValue(baseId, iso);
+        hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+        closeDropdown();
+      });
+      frag.appendChild(el);
+    });
+    grid.appendChild(frag);
+  }
+  function openDropdown() {
+    if (displayEl.disabled) return;
+    if (dropdown) { closeDropdown(); return; }
+    const base = hiddenEl.value ? parseIso(hiddenEl.value) : new Date();
+    viewYear = base.getFullYear();
+    viewMonth = base.getMonth();
+    dropdown = document.createElement('div');
+    dropdown.className = 'date-picker-dropdown';
+    dropdown.innerHTML =
+      '<div class="date-picker-header">' +
+        '<button type="button" class="dp-prev">‹</button>' +
+        '<span class="date-picker-month-label"></span>' +
+        '<button type="button" class="dp-next">›</button>' +
+      '</div>' +
+      '<div class="date-picker-grid">' +
+        DP_DAYS_SHORT.map(d => '<div class="date-picker-daylabel">' + d + '</div>').join('') +
+      '</div>';
+    dropdown.querySelector('.dp-prev').addEventListener('click', () => {
+      viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderGrid();
+    });
+    dropdown.querySelector('.dp-next').addEventListener('click', () => {
+      viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderGrid();
+    });
+    displayEl.parentElement.appendChild(dropdown);
+    renderGrid();
+    setTimeout(() => document.addEventListener('mousedown', onDocClick, true), 0);
+  }
+  displayEl.addEventListener('click', openDropdown);
 }
 function getMondayOf(d) {
   const day = d.getDay(); // 0=Sun
@@ -3217,6 +3360,29 @@ function renderEvents() {
       colDiv.appendChild(card);
     });
   });
+
+  shrinkOverflowingCardText();
+}
+
+// Siaurame stulpelyje ilgas žodis (pvz. automobilio modelis "Touareg") gali
+// netilpti į leidžiamą eilučių skaičių net po lineClampsForHeight() —
+// tada, vietoj nupjauto teksto su "...", šiek tiek sumažiname to konkretaus
+// laukelio šriftą, kad tilptų daugiau informacijos. Matuojama TIK po to, kai
+// kortelės jau realiai įdėtos į DOM (scrollHeight/clientHeight veikia tik
+// prisegtiems elementams), tad tai atskiras, paskutinis renderEvents() žingsnis.
+function shrinkOverflowingCardText() {
+  document.querySelectorAll('.event-card .event-title, .event-card .event-car, .event-card .event-desc').forEach(el => {
+    const sh = el.scrollHeight, ch = el.clientHeight;
+    if (ch <= 0 || sh <= ch + 1) return; // telpa — nieko keisti nereikia
+    const ratio = ch / sh;
+    // Jei trūksta labai daug vietos (>45%), šriftas taptų per mažas ir
+    // neįskaitomas — tokiu atveju geriau palikti apkirptą su "...", nei
+    // sumažinti iki neįskaitomo dydžio.
+    if (ratio < 0.55) return;
+    const currentSize = parseFloat(getComputedStyle(el).fontSize);
+    const newSize = Math.max(8, Math.floor(currentSize * ratio));
+    if (newSize < currentSize) el.style.fontSize = newSize + 'px';
+  });
 }
 
 function computeLayout(colEvents) {
@@ -3260,10 +3426,29 @@ function computeLayout(colEvents) {
   return items;
 }
 
+// Kortelė gali būti siaura (mažai vietos į šoną, ypač mobiliame), bet aukšta
+// (apima kelias laiko juostas) — tokiu atveju tekstas neturėtų apsiriboti
+// vos 1-2 eilutėmis vien todėl, kad stulpelis siauras: kai vietos ŽEMYN yra,
+// leidžiame automobiliui/valst.nr./aprašymui persikelti į daugiau eilučių.
+// Grąžina kiek eilučių leisti kiekvienam laukui pagal kortelės aukštį (px).
+function lineClampsForHeight(height) {
+  if (height >= 200) return { title: 3, car: 3, desc: 5 };
+  if (height >= 150) return { title: 2, car: 3, desc: 4 };
+  if (height >= 110) return { title: 2, car: 2, desc: 3 };
+  // Net ir mažiausiose kortelėse pavadinimui leidžiame 2 eilutes (ne 1) —
+  // siaurame mobiliame stulpelyje ilgas žodis (pvz. automobilio modelis
+  // "Touareg") vienoje eilutėje dažnai netilptų ir būtų nupjautas su "...",
+  // nors žemiau (2-oje eilutėje) vietos realiai yra. Kortelė turi
+  // overflow:hidden, tad jei retkarčiais 2 eilutės vis dėlto nesutalpina
+  // (labai maža kortelė), tekstas tiesiog saugiai apsikerpa apačioje.
+  return { title: 2, car: 2, desc: 2 };
+}
+
 function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   const slotH = 48; // var(--slot-h) in px
   const top = slotStart * slotH;
   const height = Math.max((slotEnd - slotStart) * slotH - 2, slotH * 0.5);
+  const lineClamps = lineClampsForHeight(height);
 
   const card = document.createElement('div');
   const lift = liftById(ev.lift);
@@ -3291,6 +3476,7 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   // klientas ir valst. nr. rodomi antraeilėje eilutėje.
   const titleEl = document.createElement('div');
   titleEl.className = 'event-title';
+  titleEl.style.webkitLineClamp = String(lineClamps.title);
   const carText = escHtml(ev.car || '');
   const STATUS_ICON = { done: '✓ ', needs_entry: '❗ ', needs_wash: '❗ ' };
   const statusIcon = STATUS_ICON[ev.status] || (active ? '▶ ' : '');
@@ -3306,6 +3492,7 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   // nr.), dirbant prie kelto.
   const carEl = document.createElement('div');
   carEl.className = 'event-car';
+  carEl.style.webkitLineClamp = String(lineClamps.car);
   const clientPart = ev.client ? escHtml(ev.client) : '';
   const platePart = ev.plate ? '<span class="event-plate">' + escHtml(ev.plate) + '</span>' : '';
   carEl.innerHTML = [platePart, clientPart].filter(Boolean).join(' · ');
@@ -3314,6 +3501,7 @@ function createEventCard(ev, slotStart, slotEnd, colIndex, colCount, colDiv) {
   // langą), kad iš karto matytųsi, kas turi būti atlikta.
   const descEl = document.createElement('div');
   descEl.className = 'event-desc';
+  descEl.style.webkitLineClamp = String(lineClamps.desc);
   descEl.textContent = ev.desc || '';
 
   card.appendChild(titleEl);
@@ -3954,7 +4142,7 @@ function setModalStatusUI(status) {
 // aktyvūs — tai vienintelis dalykas, kurį jie gali keisti (serveris tai
 // papildomai užtikrina, žr. isReadOnly() / server.js PUT patikrą).
 function setModalReadOnlyUI(readOnly) {
-  ['f-lift','f-client','f-car','f-plate','f-phone','f-mileage','f-date-from','f-date-to','f-start','f-end','f-desc','f-show-in-jobs'].forEach(id => {
+  ['f-lift','f-client','f-car','f-plate','f-phone','f-mileage','f-date-from-display','f-date-to-display','f-start','f-end','f-desc','f-show-in-jobs'].forEach(id => {
     document.getElementById(id).disabled = readOnly;
   });
   if (readOnly) {
@@ -4018,6 +4206,9 @@ document.getElementById('btn-status-needs-entry').addEventListener('click', () =
 document.getElementById('btn-status-needs-wash').addEventListener('click', () => setEventStatus('needs_wash'));
 document.getElementById('btn-status-undo').addEventListener('click', () => setEventStatus('planned'));
 
+attachDatePicker('f-date-from');
+attachDatePicker('f-date-to');
+
 // Pakeitus "Pradžią", automatiškai pastumiame "Pabaigą" ta pačia trukme
 // (pvz. 9:00–10:00 -> pradžią pakeitus į 11:00, pabaiga tampa 12:00).
 // Galioja tik vienos dienos darbui — kelių dienų darbo pradžia ir pabaiga
@@ -4050,8 +4241,8 @@ function openNewModal(dateStr, liftId, startT, endT) {
   document.getElementById('f-mileage').value = '';
   document.getElementById('f-phone').value = '';
   document.getElementById('f-client').value = '';
-  document.getElementById('f-date-from').value = dateStr;
-  document.getElementById('f-date-to').value = dateStr;
+  setDateFieldValue('f-date-from', dateStr);
+  setDateFieldValue('f-date-to', dateStr);
   document.getElementById('f-start').value = startT;
   document.getElementById('f-end').value = endT;
   document.getElementById('f-show-in-jobs').checked = true;
@@ -4079,8 +4270,8 @@ function openEditModal(id) {
   document.getElementById('f-mileage').value = ev.mileage || '';
   document.getElementById('f-phone').value = ev.phone || '';
   document.getElementById('f-client').value = ev.client || '';
-  document.getElementById('f-date-from').value = ev.dateFrom;
-  document.getElementById('f-date-to').value = ev.dateTo || ev.dateFrom;
+  setDateFieldValue('f-date-from', ev.dateFrom);
+  setDateFieldValue('f-date-to', ev.dateTo || ev.dateFrom);
   document.getElementById('f-start').value = ev.start;
   document.getElementById('f-end').value = ev.end;
   // Senesni įrašai (sukurti prieš atsirandant šiam pasirinkimui) lauko
